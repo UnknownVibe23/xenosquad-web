@@ -26,7 +26,7 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.4.0";
+  const APP_VERSION = "0.5.0";
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */
@@ -123,6 +123,23 @@
     ];
   }
 
+  /*
+   * Seeded mission templates (community consensus for Xenonauts 1). Data,
+   * not code: stored in settings, editable in the template editor on the
+   * Squad tab. No seeded template includes a medic seat — the community
+   * distributes medkits across all soldiers; the medic role stays available
+   * in the Roles tab and can be swapped into any template.
+   */
+  function defaultTemplates() {
+    return [
+      makeTemplate({ id: "crash-site", name: "Crash site", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"] }),
+      makeTemplate({ id: "ufo-landing", name: "UFO landing", seats: ["breacher", "breacher", "assault", "rifleman", "rifleman", "sniper", "sniper", "mg"] }),
+      makeTemplate({ id: "terror-site", name: "Terror site", seats: ["breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg", "rocketeer"] }),
+      makeTemplate({ id: "alien-base", name: "Alien base assault", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"] }),
+      makeTemplate({ id: "base-defense", name: "Base defense", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "rifleman", "mg"] }),
+    ];
+  }
+
   /* hpFraction: current HP as a fraction of the HP stat (max HP), or null. */
   function hpFraction(soldier) {
     const max = soldier.stats && soldier.stats.HP;
@@ -140,6 +157,7 @@
     makeTemplate,
     makeSoldier,
     defaultRoles,
+    defaultTemplates,
     hpFraction,
   };
 });

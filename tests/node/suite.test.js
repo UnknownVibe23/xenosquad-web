@@ -29,4 +29,5 @@ require("../../tools/fixture-generator.js");
 require("../parser.test.js");
 require("../scoring.test.js");
 require("../hungarian.test.js");
+require("../settings.test.js");
 require("../assignment.test.js");

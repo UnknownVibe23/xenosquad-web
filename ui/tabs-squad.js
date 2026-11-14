@@ -68,6 +68,120 @@
     );
   }
 
+  /*
+   * Mission templates: named seat compositions stored in settings. The
+   * dropdown applies one to the seat builder; the editor below it can add,
+   * duplicate, rename, edit and delete templates.
+   */
+  function renderTemplates(main, state) {
+    const app = XS.app;
+    const templates = state.settings.templates;
+    const roles = state.settings.roles || [];
+    const roleIds = new Set(roles.map((r) => r.id));
+
+    const select = h("select", { "aria-label": "Mission template" }, [
+      h("option", { value: "", text: "— apply a template…" }),
+      ...templates.map((tp) => h("option", { value: tp.id, text: tp.name + " (" + tp.seats.length + " seats)" })),
+    ]);
+
+    const cards = templates.map((tp) => {
+      const seatsInput = h("input", {
+        type: "text",
+        class: "tpl-seats",
+        value: tp.seats.join(", "),
+        "aria-label": "seats of template " + tp.name,
+        on: {
+          change: (e) => {
+            const ids = e.target.value.split(",").map((x) => x.trim()).filter(Boolean);
+            const bad = ids.filter((id) => !roleIds.has(id));
+            if (bad.length > 0) {
+              e.target.classList.add("invalid");
+              return;
+            }
+            e.target.classList.remove("invalid");
+            tp.seats = ids;
+            app.settingsChanged();
+          },
+        },
+      });
+      return h("div", { class: "tpl-card" }, [
+        h("input", {
+          type: "text",
+          class: "tpl-name",
+          value: tp.name,
+          "aria-label": "template name",
+          on: { change: (e) => { tp.name = e.target.value || tp.id; app.settingsChanged(); } },
+        }),
+        seatsInput,
+        h("span", { class: "btn-row" }, [
+          h("button", {
+            type: "button",
+            text: "Apply",
+            title: "Fill the seat builder with this template",
+            on: { click: () => { state.settings.seats = tp.seats.slice(); app.settingsChanged(); } },
+          }),
+          h("button", {
+            type: "button",
+            text: "Duplicate",
+            on: {
+              click: () => {
+                templates.splice(templates.indexOf(tp) + 1, 0, XS.domain.makeTemplate({ name: tp.name + " (copy)", seats: tp.seats.slice() }));
+                app.settingsChanged();
+              },
+            },
+          }),
+          h("button", {
+            type: "button",
+            class: "danger",
+            text: "Delete",
+            disabled: templates.length <= 1,
+            on: {
+              click: () => {
+                if (templates.length <= 1) return;
+                templates.splice(templates.indexOf(tp), 1);
+                app.settingsChanged();
+              },
+            },
+          }),
+        ]),
+      ]);
+    });
+
+    main.appendChild(
+      h("section", { class: "panel" }, [
+        h("h2", { text: "Mission templates" }),
+        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Applying one fills the seat builder below — you can still tweak individual seats afterwards. Seats are comma-separated role ids; unknown ids are rejected." }),
+        h("div", { class: "tpl-apply" }, [
+          select,
+          h("button", {
+            type: "button",
+            text: "Apply template",
+            on: {
+              click: () => {
+                const tp = templates.find((x) => x.id === select.value);
+                if (tp) {
+                  state.settings.seats = tp.seats.slice();
+                  app.settingsChanged();
+                }
+              },
+            },
+          }),
+          h("button", {
+            type: "button",
+            text: "+ New template from current seats",
+            on: {
+              click: () => {
+                templates.push(XS.domain.makeTemplate({ name: "Template " + (templates.length + 1), seats: state.settings.seats.slice() }));
+                app.settingsChanged();
+              },
+            },
+          }),
+        ]),
+        h("div", { class: "tpl-list" }, cards),
+      ])
+    );
+  }
+
   function renderSeatBuilder(main, state) {
     const app = XS.app;
     const roles = state.settings.roles || [];
@@ -191,6 +305,7 @@
   function renderSquad(main, state) {
     renderLoadPanel(main, state);
     renderInspector(main, state);
+    renderTemplates(main, state);
     renderSeatBuilder(main, state);
     renderResult(main, state);
   }

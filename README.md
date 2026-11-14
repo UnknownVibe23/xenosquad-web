@@ -60,9 +60,16 @@ in-game date. All offsets/counts are settings, never hardcoded.
 
 ## Testing
 
-- **Browser (canonical):** open `tests/tests.html` — runs the whole suite and prints
-  pass/fail per test. No server needed.
-- **Node (convenience):** `node --test tests/node/` runs the same suite headlessly.
+- **Browser (canonical):** open `tests/tests.html` — runs the whole suite (50 tests) and
+  prints pass/fail per test. No server needed; works from `file://`.
+- **Node (convenience):** `node --test tests/node/suite.test.js` runs the same test files
+  headlessly (the logic modules import cleanly in Node without a DOM).
+
+Covered: the parser against the synthetic fixture (marker scan, string/int/float decoding,
+record layout, calibration, robustness), exclusions/normalization/role scoring, the Hungarian
+solver (including the "two roles want the same soldier" case and — in tests only — brute-force
+optimality over random small matrices; the brute-force path never ships in production),
+assignment edge cases, and settings merge + export/import round-trip + namespaced storage.
 
 Tests are hand-written and zero-dependency. Save-file test input is **synthetic**: generate it
 with `node tools/make-fixture.js` (writes `fixtures/synthetic-planner.sav`, invented names
@@ -71,11 +78,23 @@ like "Test Soldier 1"). Never commit a real save or real soldier names.
 ## Architecture
 
 - `parser/` — binary save extraction (pure: buffer in, data out)
-- `domain/` — plain-object models (Soldier, Role, SquadTemplate) + version constant
+- `domain/` — plain-object models (Soldier, Role, SquadTemplate) + seeded defaults + version
 - `scoring/` — exclusions, normalization, role scoring, assignment; `scoring/hungarian.js`
   is the hand-written Kuhn–Munkres solver
 - `settings/` — defaults, validation, merge, export/import, localStorage (storage injected)
 - `ui/` — rendering only; logic modules never touch the DOM
 - `tests/`, `tools/` — test suite + synthetic fixture generator
 
-All logic modules are importable by Node without a DOM.
+All logic modules are importable by Node without a DOM. Every file uses a tiny UMD-style
+wrapper (classic `<script>` in the browser → works from `file://`; `module.exports` in Node).
+
+## Feature map
+
+| Tab | What it does |
+| --- | --- |
+| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live |
+| Soldiers | parsed roster: stats, HP/wound status, game role, rank, loadout |
+| Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
+| Settings | global parameters (wounded threshold, encumbrance, psi era, training seat), save-format parameters, export/import JSON, per-section resets, reset all, **Clear all my data** |
+| Calibrate | raw save slots → the six stats, current-HP and rank sources; per-soldier raw value table |
+| Help | usage guide, calibration flow, scoring pipeline, privacy note, version |

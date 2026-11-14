@@ -72,8 +72,19 @@
       roles: XS.domain.defaultRoles(),
       /* The seat builder: a role id per seat. Defaults to 8 seats. */
       seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"],
-      templates: [],
+      templates: XS.domain.defaultTemplates(),
     };
+  }
+
+  /* Sections that have a per-section reset button in the Settings tab. */
+  const SECTIONS = ["format", "calibration", "global", "roles", "templates", "seats"];
+
+  /* Reset one section of a settings object to its built-in defaults. */
+  function resetSection(settings, section) {
+    if (SECTIONS.indexOf(section) === -1) return settings;
+    const dflt = defaultSettings();
+    settings[section] = dflt[section] && typeof dflt[section] === "object" ? JSON.parse(JSON.stringify(dflt[section])) : dflt[section];
+    return settings;
   }
 
   function isPlainObject(v) {
@@ -107,9 +118,15 @@
       else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
     }
     if (obj.global !== undefined && !isPlainObject(obj.global)) errors.push("global must be an object");
-    if (obj.roles !== undefined && !Array.isArray(obj.roles)) errors.push("roles must be an array");
+    if (obj.roles !== undefined) {
+      if (!Array.isArray(obj.roles)) errors.push("roles must be an array");
+      else obj.roles.forEach((r, i) => { if (!isPlainObject(r) || typeof r.id !== "string" || typeof r.name !== "string") errors.push("roles[" + i + "] must have id and name strings"); });
+    }
     if (obj.seats !== undefined && !Array.isArray(obj.seats)) errors.push("seats must be an array");
-    if (obj.templates !== undefined && !Array.isArray(obj.templates)) errors.push("templates must be an array");
+    if (obj.templates !== undefined) {
+      if (!Array.isArray(obj.templates)) errors.push("templates must be an array");
+      else obj.templates.forEach((tp, i) => { if (!isPlainObject(tp) || typeof tp.id !== "string" || !Array.isArray(tp.seats)) errors.push("templates[" + i + "] must have id and a seats array"); });
+    }
     return errors;
   }
 
@@ -173,7 +190,9 @@
   return {
     STORAGE_PREFIX,
     SETTINGS_KEY,
+    SECTIONS,
     defaultSettings,
+    resetSection,
     deepMerge,
     validateSettings,
     mergeSettings,

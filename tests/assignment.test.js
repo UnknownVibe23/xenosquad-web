@@ -116,7 +116,7 @@
     settings.global.includeRecruits = true;
     const plan2 = XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax });
     t.ok(plan2.picks.filter((p) => p && p.soldier).length >= picked.length, "more soldiers available -> at least as many seats filled");
-    t.notOk(plan2.notices.some((n) => /recruitable/.test(n)));
+    t.notOk(plan2.notices.some((n) => /excluded from planning/.test(n)), "no exclusion notice when recruits are included");
   });
 
   test("assignment: scales to a large roster and squad — no hardcoded limits anywhere", (t) => {

@@ -25,7 +25,7 @@
         h("ol", {}, [
           h("li", { text: "Grab a .sav from your Xenonauts save folder (Documents/Xenonauts/; inside the Wine prefix at drive_c/users/<user>/Documents/Xenonauts/ when playing via Proton). A dedicated slot producing planner.sav is handy." }),
           h("li", { text: "Drag the file anywhere onto this page (or use the picker on the Squad tab). It is parsed locally and never uploaded." }),
-          h("li", { text: "Squad tab: apply a mission template or build your own seat list (+ role buttons, per-seat role dropdown, × to remove; default 8 seats like the CH-48 Charlie), then read the suggested squad, bench and the \"why\" per pick, all live via the \"Plan squad\" button or automatically." }),
+          h("li", { text: "Squad tab, top to bottom: load the save, build the squad request (+ role buttons with icons, per-seat role dropdown, × to remove; default 8 seats like the CH-48 Charlie), read the suggested squad, bench and the \"why\" per pick (all live). Mission templates (apply dropdown; editor collapsed) and the save inspection sit in collapsed panels below." }),
           h("li", { text: "Soldiers: the parsed roster. Roles: your doctrine (weights, floors, kit weight). Settings: global parameters, export/import, resets, Clear all my data." }),
         ]),
         h("p", { class: "muted", text: "The save format was verified against real saves and in-game screenshots and is built in (the Calibrate/save-format UI is hidden because the GOG build is final; see README to re-enable it). Fields we could not locate (rank) disable their feature with a notice instead of inventing values." }),

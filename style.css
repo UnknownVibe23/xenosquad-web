@@ -336,6 +336,12 @@ table.roster tbody tr:nth-child(even) { background: #ffffff08; }
   padding: 0.05rem 0.3rem;
 }
 
+/* collapsible panels (save inspection, template editor) */
+details.panel > summary { cursor: pointer; font-weight: 700; }
+details.panel[open] > summary { margin-bottom: 0.5rem; }
+details.tpl-edit > summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+details.tpl-edit[open] > summary { margin-bottom: 0.4rem; color: var(--text); }
+
 /* settings advanced (collapsed) section */
 details.panel.advanced summary {
   cursor: pointer;

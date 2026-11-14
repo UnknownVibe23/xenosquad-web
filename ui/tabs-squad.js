@@ -68,8 +68,8 @@
       ["Soldier blocks found", String((info.soldiers || []).length)],
     ];
     main.appendChild(
-      h("section", { class: "panel" }, [
-        h("h2", { text: "Save inspection" }),
+      h("details", { class: "panel inspect" }, [
+        h("summary", { text: "Save inspection: " + (state.lastFileName || "file") + " - " + String((info.soldiers || []).length) + " soldier blocks, " + String(info.markerCount) + " markers" }),
         h("table", { class: "kv" }, rows.map((r) => h("tr", {}, [h("th", { text: r[0] }), h("td", { text: r[1] })]))),
       ])
     );
@@ -176,7 +176,7 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Mission templates" }),
-        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Apply one, then tweak seats below. Edit a template with the +/− buttons per role; no typing needed." }),
+        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Apply one, then tweak the seats in the squad request above." }),
         h("div", { class: "tpl-apply" }, [
           select,
           h("button", {
@@ -188,12 +188,18 @@
               },
             },
           }),
-          h("button", {
-            type: "button", text: "+ New template from current seats",
-            on: { click: () => { templates.push(XS.domain.makeTemplate({ name: "Template " + (templates.length + 1), seats: state.settings.seats.slice() })); app.settingsChanged(); } },
-          }),
         ]),
-        h("div", { class: "tpl-list" }, cards),
+        // the editor is collapsed by default: it is not needed every time
+        h("details", { class: "tpl-edit" }, [
+          h("summary", { text: "Edit templates (" + templates.length + "): add, duplicate, rename, delete, +/- counters per role" }),
+          h("p", { class: "btn-row" }, [
+            h("button", {
+              type: "button", text: "+ New template from current seats",
+              on: { click: () => { templates.push(XS.domain.makeTemplate({ name: "Template " + (templates.length + 1), seats: state.settings.seats.slice() })); app.settingsChanged(); } },
+            }),
+          ]),
+          h("div", { class: "tpl-list" }, cards),
+        ]),
       ])
     );
   }
@@ -338,12 +344,18 @@
     }
   }
 
+  /*
+   * Squad tab layout, in priority order: the core flow is load -> squad
+   * request -> suggested squad, always at the top. The save inspection and
+   * the template editor are secondary and live in collapsed panels below,
+   * so the page stays compact; everything still re-renders live.
+   */
   function renderSquad(main, state) {
     renderLoadPanel(main, state);
-    renderInspector(main, state);
-    renderTemplates(main, state);
     renderSeatBuilder(main, state);
     renderResult(main, state);
+    renderTemplates(main, state);
+    renderInspector(main, state);
   }
 
   XS.ui = XS.ui || {};

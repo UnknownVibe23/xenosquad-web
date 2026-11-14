@@ -114,6 +114,15 @@ what the parser reads). If more save files ever show
 a different layout, share one (as `.txt`, never committed) and we decide then whether to bring the
 calibration UI back.
 
+**Verified sample matrix** (all shared as `.txt` in conversation, never committed): 4 vanilla GOG
+saves from the same `planner` slot (game date Sep 1979, 22 soldier blocks each = 10 team + 12
+recruits, early and mid campaign, including one where a team soldier is wounded at 35/50). All four
+share the identical header (`onex`, version 256) and record layout, parse with 0 errors and 0 sanity
+anomalies. Not yet verified against a real file: mid-ground-combat saves (same soldier blocks are
+expected, but they were the crash-prone saves in vanilla), late-game rosters (more than 22 soldiers,
+higher stats/ranks), dead soldiers, and X:CE/modded saves (the sanity check warns on those). If you
+have a late-game or mid-combat save, sharing it as `.txt` extends the verification.
+
 **Supported saves / reliability.** Vanilla Xenonauts 1 (final 1.06 GOG/Steam build) is the verified
 target: every real save inspected so far has the identical header (`onex`, version 256) and
 soldier-block layout, Goldhawk stated the patches did not break saves, and the game has been in

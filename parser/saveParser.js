@@ -298,6 +298,7 @@
         if (Number.isFinite(v) && v > 0 && v < 100000) intBeforeRole = v;
       }
     }
+
     // loadout: every weapon.* / ammo.* string, in file order
     const loadout = [];
     for (const prefix of ["weapon.", "ammo."]) {
@@ -307,11 +308,30 @@
     strings.loadout = loadout.map((r) => r.value);
     // best-effort transport seat string, e.g. "Charlie - 1/13" — searched only
     // in the first part of the window so post-block mission data cannot fake it
+    let seatAnchored = null;
     const seatRegion = windowText.substr(0, 256);
     const seatMatch = seatRegion.match(/[A-Za-z][A-Za-z0-9 ._'-]{1,30} - \d+\/\d+/);
     if (seatMatch) {
       const r = tryReadAnchored(view, bytes, windowStart, windowText, seatMatch.index);
-      if (r) strings.seat = r.value;
+      if (r) {
+        strings.seat = r.value;
+        seatAnchored = r;
+      }
+    }
+    /*
+     * Fallback HP anchor for blocks with NO known role string (a layout we have
+     * not seen): when a seat string is present, the same layout puts the HP
+     * int 4 bytes past the end of the seat string's content (after the
+     * seat-index int). Only plausible positive values are accepted; the sanity
+     * check flags the result if it ever exceeds the soldier's max HP.
+     */
+    let intAfterSeat = null;
+    if (intBeforeRole == null && seatAnchored) {
+      const p = windowStart + seatAnchored.index + seatAnchored.value.length + 4;
+      if (p >= 0 && p + 4 <= bytes.length) {
+        const v = readInt32(view, p);
+        if (Number.isFinite(v) && v > 0 && v < 100000) intAfterSeat = v;
+      }
     }
 
     /*
@@ -335,7 +355,8 @@
       statInts,
       rawFloats,
       hpFloat,
-      intBeforeRole, // current HP (verified), null when not found/plausible
+      intBeforeRole, // current HP via the role anchor (verified), null when absent
+      intAfterSeat, // current HP via the seat anchor (fallback), null when absent
       postInts,
       inTeam,
       strings,
@@ -425,7 +446,7 @@
     let currentHP = null;
     const chp = cal.currentHP || { kind: "beforeRole" };
     if (chp.kind === "float") currentHP = raw.hpFloat;
-    else if (chp.kind === "beforeRole") currentHP = typeof raw.intBeforeRole === "number" ? raw.intBeforeRole : null;
+    else if (chp.kind === "beforeRole") currentHP = typeof raw.intBeforeRole === "number" ? raw.intBeforeRole : typeof raw.intAfterSeat === "number" ? raw.intAfterSeat : null;
     else if (chp.kind === "slot" && Number.isInteger(chp.slot) && chp.slot >= 0 && chp.slot < raw.statInts.length) currentHP = raw.statInts[chp.slot];
     let rank = 0;
     let rankKind = "none";
@@ -476,7 +497,7 @@
       experience: raw.strings.experience,
       armour: raw.strings.armour,
       loadout,
-      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, intBeforeRole: raw.intBeforeRole, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
+      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, intBeforeRole: raw.intBeforeRole, intAfterSeat: raw.intAfterSeat, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
     });
   }
 
@@ -529,6 +550,9 @@
     if (Number.isFinite(san.headerVersion) && header.version != null && header.version !== san.headerVersion) {
       add("Header save-version int is " + header.version + "; vanilla Xenonauts 1 (build 1.06) writes " + san.headerVersion + ".");
     }
+    if (typeof header.gameDate === "string" && header.gameDate.length > 0 && !/^\d{2}:\d{2} \d{2} [A-Z][a-z]{2} \d{4}$/.test(header.gameDate)) {
+      add('Header in-game date "' + header.gameDate + '" does not look like "HH:MM DD Mon YYYY"; the header may be misread in this file.');
+    }
     if (Array.isArray(res.recordErrors) && res.recordErrors.length > 0) {
       add(res.recordErrors.length + " soldier block(s) could not be read at all (corrupt or truncated record).");
     }
@@ -541,6 +565,7 @@
     let nullRole = 0;
     let seatNoTeam = 0;
     let hpOverMax = 0, hpExample = "";
+    const nameCounts = new Map();
     for (const s of soldiers) {
       const raw = isObj(s.raw) ? s.raw : {};
       const ints = Array.isArray(raw.statInts) ? raw.statInts : [];
@@ -559,6 +584,7 @@
       }
       if (s.equipmentRole == null) nullRole++;
       if (s.seat && s.inTeam === false) seatNoTeam++;
+      if (s.name) nameCounts.set(s.name, (nameCounts.get(s.name) || 0) + 1);
       // a located current HP above the (bonus-adjusted) max HP means the block
       // layout is not the vanilla one we verified
       if (typeof s.currentHP === "number" && typeof s.stats.HP === "number" && s.currentHP > s.stats.HP + 0.5) {
@@ -571,6 +597,8 @@
     if (soldiers.length > 0 && nullRole === soldiers.length) add("No in-game equipment-role string was found in any soldier block (expected one of: " + (Array.isArray(format.roleNames) ? format.roleNames.join(", ") : "Rifleman, Assault, ...") + ").");
     if (seatNoTeam > 0) add(seatNoTeam + ' soldier(s) have a transport seat but no "' + (format.teamStringPrefix || "weapon.") + '" string (team detection is inconsistent in this file).');
     if (hpOverMax > 0) add(hpOverMax + " soldier(s) have a current HP above their max HP (first: " + hpExample + "); the block layout may differ in this file.");
+    const dupes = Array.from(nameCounts.entries()).filter(([, n]) => n > 1);
+    if (dupes.length > 0) add(dupes.length + " duplicate soldier name(s) (e.g. \"" + dupes[0][0] + "\" x" + dupes[0][1] + "); the marker scan may have double-counted a block in this file.");
     const prefix = typeof format.teamStringPrefix === "string" ? format.teamStringPrefix : "";
     if (prefix && soldiers.length > 0 && soldiers.every((s) => s.inTeam === false)) {
       add('No soldier block contains a "' + prefix + '" string, so active team and recruitment pool could not be told apart.');

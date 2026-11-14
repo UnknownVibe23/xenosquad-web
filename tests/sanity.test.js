@@ -134,6 +134,46 @@
     t.ok(res.anomalies.some((a) => /current HP above/.test(a)), "hp-over-max anomaly: " + res.anomalies.join(" | "));
   });
 
+  test("parser: current HP falls back to the seat-anchored int when no role string is known", (t) => {
+    const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 101, soldiers: 9 }); // all team, seats at i%3==0
+    const settings = XS.settings.defaultSettings();
+    settings.format.roleNames = ["Nope"]; // no role string matches -> role anchor unavailable
+    const res = parseWith(bytes, settings);
+    t.ok(res.ok);
+    res.soldiers.forEach((s, i) => {
+      const seated = i % 3 === 0;
+      if (seated) t.equal(s.currentHP, spec.soldiers[i].currentHP, "seated soldier " + i + " gets HP via the seat anchor");
+      else t.equal(s.currentHP, null, "soldier " + i + " without seat or role anchor has no HP");
+    });
+  });
+
+  test("sanity: duplicate soldier names are flagged (double-counted marker)", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 103, soldiers: 6 });
+    const twice = new Uint8Array(bytes.length * 2);
+    twice.set(bytes, 0);
+    twice.set(bytes, bytes.length);
+    const res = parseWith(twice);
+    t.ok(res.ok);
+    t.ok(res.anomalies.some((a) => /duplicate soldier name/.test(a)), "duplicate-name anomaly: " + res.anomalies.join(" | "));
+  });
+
+  test("sanity: a malformed header in-game date is flagged", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 104, soldiers: 4 });
+    const patched = bytes.slice();
+    // header: magic(4) + version(4) + saveName str ("planner-test", 12) + gameDate str at offset 24 (len) / 28 (content)
+    patched[28] = 88; // "X0:00 01 Sep 1979"
+    const res = parseWith(patched);
+    t.ok(res.anomalies.some((a) => /in-game date/.test(a)), "date anomaly: " + res.anomalies.join(" | "));
+  });
+
+  test("sanity: a 120-soldier save parses cleanly (scale, zero anomalies)", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 102, soldiers: 120, recruitEvery: 5 });
+    const res = parseWith(bytes);
+    t.ok(res.ok);
+    t.equal(res.soldiers.length, 120);
+    t.deepEqual(res.anomalies, [], "large clean fixture has no anomalies");
+  });
+
   test("sanity: fuzzed buffers with a planted marker never throw and always return an array", (t) => {
     const rnd = mulberry32(4242);
     const marker = new TextEncoder().encode("SoldierFlags");

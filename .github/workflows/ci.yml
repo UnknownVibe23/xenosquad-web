@@ -1,0 +1,35 @@
+# CI: runs the zero-dependency test suite on every pull request to main and
+# on every push. Keeps main green — a PR with failing tests cannot be merged
+# once the "test" check is required by the branch ruleset.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "vibe/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax-check every JS file
+        run: |
+          for f in $(find . -name '*.js' -not -path './.git/*'); do
+            node --check "$f" || exit 1
+          done
+
+      - name: Run the test suite (browser suite is tests/tests.html)
+        run: node --test tests/node/suite.test.js

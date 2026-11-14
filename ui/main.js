@@ -34,10 +34,36 @@
     lastBuffer: null, // ArrayBuffer of the last dropped file (for re-calibration)
     lastFileName: null,
     error: null,
+    notices: [],
   };
 
   function persistSettings() {
     if (XS.settings && state.settings) XS.settings.saveSettings(localStorage, state.settings);
+  }
+
+  /*
+   * Re-parse the last dropped file with the current settings (used when the
+   * calibration mapping changes). The roster is rebuilt in memory only.
+   */
+  function reparse() {
+    if (!state.lastBuffer) return;
+    const res = XS.parser.parseSaveWithSettings(state.lastBuffer, state.settings);
+    state.parseInfo = res;
+    if (res.ok) {
+      state.error = null;
+      state.roster = res.soldiers || [];
+      state.notices = res.notices || [];
+    } else {
+      state.error = res.error;
+      state.roster = null;
+    }
+  }
+
+  /* Called by editor tabs after mutating state.settings. */
+  function settingsChanged() {
+    persistSettings();
+    reparse();
+    rerender();
   }
 
   function rerender() {
@@ -79,14 +105,15 @@
       .arrayBuffer()
       .then((buf) => {
         state.lastBuffer = buf;
-        const res = XS.parser.inspectSave(buf, state.settings && state.settings.format);
+        const res = XS.parser.parseSaveWithSettings(buf, state.settings);
         state.parseInfo = res;
         if (!res.ok) {
           state.error = res.error;
           state.roster = null;
         } else {
           state.error = null;
-          state.roster = [];
+          state.roster = res.soldiers || [];
+          state.notices = res.notices || [];
           state.activeTab = "squad";
         }
         rerender();
@@ -132,5 +159,5 @@
 
   // exposed for the tab modules
   XS.ui = XS.ui || {};
-  XS.app = { state, handleFile, persistSettings, rerender };
+  XS.app = { state, handleFile, persistSettings, settingsChanged, rerender };
 })(typeof self !== "undefined" ? self : globalThis);

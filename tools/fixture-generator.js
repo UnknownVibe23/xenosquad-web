@@ -1,0 +1,182 @@
+/*
+ * tools/fixture-generator.js — synthetic Xenonauts save fixture generator.
+ *
+ * WHY: the repository must never contain a real save file or real soldier
+ * names, so all parser tests use a fake save built here with invented names
+ * ("Test Soldier 1", ...). The generator reproduces the exact binary
+ * encoding observed in a real planner.sav: length-prefixed ASCII strings,
+ * LE int32, LE float32, the "SoldierFlags" marker per soldier, the record
+ * layout, and a small header. It is a pure module (bytes in memory out), so
+ * the browser test suite can build fixtures without any file, and Node can
+ * write one to disk via tools/make-fixture.js.
+ *
+ * Determinism: a seeded PRNG (mulberry32) makes every test run identical.
+ */
+(function (root, factory) {
+  const XS = (root.XS = root.XS || {});
+  const api = factory(XS);
+  XS.fixture = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+})(typeof self !== "undefined" ? self : globalThis, function (XS) {
+  "use strict";
+
+  /* Small deterministic PRNG so fixtures are reproducible. */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* Byte writer mirroring the engine's serialization. */
+  function ByteWriter() {
+    this.parts = [];
+    this.length = 0;
+  }
+  ByteWriter.prototype.u8 = function (b) {
+    this.parts.push(Uint8Array.of(b & 0xff));
+    this.length += 1;
+  };
+  ByteWriter.prototype.i32 = function (v) {
+    const b = new Uint8Array(4);
+    new DataView(b.buffer).setInt32(0, v, true);
+    this.parts.push(b);
+    this.length += 4;
+  };
+  ByteWriter.prototype.f32 = function (v) {
+    const b = new Uint8Array(4);
+    new DataView(b.buffer).setFloat32(0, v, true);
+    this.parts.push(b);
+    this.length += 4;
+  };
+  ByteWriter.prototype.str = function (s) {
+    const bytes = new TextEncoder().encode(s);
+    this.i32(bytes.length);
+    this.parts.push(bytes);
+    this.length += bytes.length;
+  };
+  ByteWriter.prototype.raw = function (u8) {
+    this.parts.push(u8);
+    this.length += u8.length;
+  };
+  ByteWriter.prototype.toUint8Array = function () {
+    const out = new Uint8Array(this.length);
+    let off = 0;
+    for (const p of this.parts) {
+      out.set(p, off);
+      off += p.length;
+    }
+    return out;
+  };
+
+  const PORTRAITS = ["med", "nor", "afri", "cust"];
+  const ROLES = ["Rifleman", "Assault", "Sniper", "Scout", "Shield", "Heavy weapons", "Rocketeer", "Specialist"];
+  const WEAPONS = ["weapon.rifle", "weapon.shotgun", "weapon.machinegun", "weapon.sniper", "weapon.rocket.frag"];
+  const AMMOS = ["ammo.ballistic.rifle", "ammo.ballistic.shotgun", "ammo.ballistic.machinegun", "ammo.ballistic.sniper"];
+  const GRENADES = ["weapon.grenade.frag", "weapon.grenade.smoke", "weapon.grenade.flashbang", "weapon.grenade.medipack"];
+
+  /*
+   * Build a synthetic save. Options: { seed, soldiers, saveName, gameDate }.
+   * Returns { bytes: Uint8Array, spec: { header, soldiers: [...] } } — `spec`
+   * exposes exactly what was written so tests can assert against it.
+   */
+  function buildFixtureSave(options) {
+    const opts = options || {};
+    const seed = opts.seed == null ? 1 : opts.seed;
+    const count = opts.soldiers == null ? 10 : opts.soldiers;
+    const saveName = opts.saveName || "planner-test";
+    const gameDate = opts.gameDate || "00:00 01 Sep 1979";
+    const rnd = mulberry32(seed);
+    const w = new ByteWriter();
+    const spec = { header: { saveName, gameDate }, soldiers: [] };
+
+    // header: magic, version, save name, in-game date, real date, file name
+    w.raw(new TextEncoder().encode("onex"));
+    w.i32(256);
+    w.str(saveName);
+    w.str(gameDate);
+    w.str("12:00 14 Nov 2026");
+    w.str("2026-11-14_12.00.00");
+    for (let i = 0; i < 24; i++) w.u8(Math.floor(rnd() * 256)); // junk
+
+    for (let i = 0; i < count; i++) {
+      const n = i + 1;
+      const nationality = "Testland";
+      const name = "Test Soldier " + n;
+      const portrait = PORTRAITS[Math.floor(rnd() * PORTRAITS.length)];
+      const portraitIndex = Math.floor(rnd() * 20);
+      const shortNat = "tst";
+      // six base stats; the "current" copy differs slightly so tests can tell
+      // the two copies apart when selecting current vs base in Calibrate
+      const base = [];
+      for (let s = 0; s < 6; s++) base.push(35 + Math.floor(rnd() * 36)); // 35..70
+      const current = base.map((v) => Math.max(20, v - Math.floor(rnd() * 5)));
+      const statInts = current.concat(base); // 12 ints: current copy, then base copy
+      const hpFloat = 20 + Math.floor(rnd() * 20); // current HP as float, < HP stat
+      const role = ROLES[i % ROLES.length];
+      const regiment = "regiment.tst" + (1 + (i % 3));
+      const experience = i % 4 === 0 ? "experience.none" : "experience.tst" + (1 + (i % 3));
+      const weapon = WEAPONS[i % WEAPONS.length];
+      const ammo = AMMOS[i % AMMOS.length];
+      const grenade = GRENADES[i % GRENADES.length];
+      const seat = i % 3 === 0 ? "Charlie - " + n + "/13" : null;
+
+      // junk between soldiers (never contains the marker: 12 fixed ASCII
+      // bytes have a negligible chance of matching by accident, and the
+      // seed is fixed for tests)
+      for (let j = 0; j < 16 + Math.floor(rnd() * 32); j++) w.u8(Math.floor(rnd() * 256));
+
+      // pre-marker fields
+      w.str(nationality);
+      w.str(name);
+      w.str(portrait);
+      w.i32(portraitIndex);
+      w.str("SoldierFlags"); // the marker is itself a length-prefixed string
+
+      // post-marker fields
+      w.u8(0); // flag byte
+      w.str(shortNat);
+      for (const v of statInts) w.i32(v);
+      for (let k = 0; k < 41; k++) w.u8(0); // zero padding run
+      w.f32(hpFloat); // the one float among the padding (current HP)
+      w.str(regiment);
+      w.str(experience);
+      w.i32(0);
+      w.i32(-1); // FF FF FF FF
+      if (seat) w.str(seat); else w.str("None");
+      w.i32(3);
+      w.i32(56);
+      w.u8(1);
+      w.str(role);
+      w.str("Corporation.DeadSoldiersImplemented");
+      w.u8(0);
+      w.u8(0);
+      w.str("LastMissionEnum");
+      w.i32(0);
+      w.str("DeadSoldier.UnknownLoc");
+      w.str("armour.basic");
+      w.str("armour.basic");
+      w.str(weapon);
+      w.str("Inventory.SaveAmmoType");
+      w.u8(0);
+      w.str(ammo);
+      w.str(weapon);
+      w.i32(1);
+      w.u8(0);
+      w.str(grenade);
+
+      spec.soldiers.push({ name, nationality, portrait, portraitIndex, statInts, hpFloat, role, regiment, experience, loadout: [weapon, ammo, weapon, grenade], seat });
+    }
+
+    // trailing junk
+    for (let i = 0; i < 64; i++) w.u8(Math.floor(rnd() * 256));
+
+    return { bytes: w.toUint8Array(), spec };
+  }
+
+  return { buildFixtureSave, mulberry32, ByteWriter };
+});

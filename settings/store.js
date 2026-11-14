@@ -42,6 +42,18 @@
         stringScanBytes: 512,
         roleNames: XS.domain.EQUIPMENT_ROLES.slice(),
       },
+      /*
+       * Calibration: which raw slot of a soldier block is which stat.
+       * Default hypothesis (verified against the sample save's layout, but
+       * adjustable in the Calibrate tab): slots 0..5 are TU, ACC, RFL, BRV,
+       * STR, HP of the first copy; the padding float is current HP; rank is
+       * not locatable and stays disabled.
+       */
+      calibration: {
+        statSlots: { TU: 0, ACC: 1, RFL: 2, BRV: 3, STR: 4, HP: 5 },
+        currentHP: { kind: "float" }, // or { kind: "slot", slot: n }
+        rank: { kind: "none" }, // or { kind: "slot", slot: n } / { kind: "experience" }
+      },
     };
   }
 
@@ -70,6 +82,10 @@
     else {
       if (typeof obj.format.marker !== "string" || obj.format.marker.length === 0) errors.push("format.marker must be a non-empty string");
       if (!Number.isInteger(obj.format.statCount) || obj.format.statCount < 0 || obj.format.statCount > 64) errors.push("format.statCount must be an integer in 0..64");
+    }
+    if (obj.calibration !== undefined) {
+      if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");
+      else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
     }
     return errors;
   }

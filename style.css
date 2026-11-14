@@ -205,3 +205,33 @@ table.kv th { color: var(--muted); font-weight: 600; white-space: nowrap; }
   .app-header h1 { font-size: 1.15rem; }
   .panel { padding: 0.75rem; }
 }
+
+/* tables (Soldiers tab, Calibrate raw view) */
+.table-wrap { overflow-x: auto; max-width: 100%; }
+table.roster { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+table.roster th, table.roster td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+table.roster th { color: var(--muted); position: sticky; top: 0; background: var(--panel); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.small { color: var(--muted); font-size: 0.78rem; }
+tr.wounded td { color: var(--danger); }
+td.mapped { background: #2b4a6355; font-weight: 600; }
+
+.notice {
+  background: #3a3320;
+  border: 1px solid #8a7a3a;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  color: #ffe9a8;
+}
+
+/* calibrate grid */
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
+.cal-row { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+.cal-row select { width: 100%; }

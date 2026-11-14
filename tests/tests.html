@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <title>xenosquad-web tests</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    /* page-local test styles (kept inline in this test page only; the app
+       itself uses no inline styles) */
+    #results .test { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; }
+    #results .mark { font-weight: 700; font-family: ui-monospace, monospace; font-size: 0.8rem; }
+    #results .test.pass .mark { color: var(--accent-2); }
+    #results .test.fail .mark { color: var(--danger); }
+    #results .err { margin: 0.2rem 0 0.4rem; color: var(--danger); white-space: pre-wrap; font-size: 0.8rem; }
+    h2.pass { color: var(--accent-2); } h2.fail { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>xenosquad-web — test suite</h1>
+    <p class="tagline">Open this file directly (file://) — no server needed. Same suite runs under <code>node --test tests/node/</code>.</p>
+  </header>
+  <main class="tab-content">
+    <div id="results"></div>
+  </main>
+
+  <script src="../domain/models.js"></script>
+  <script src="../parser/saveParser.js"></script>
+  <script src="../settings/store.js"></script>
+  <script src="../tools/fixture-generator.js"></script>
+  <script src="../ui/dom.js"></script>
+  <script src="helpers.js"></script>
+  <script src="parser.test.js"></script>
+  <script src="runner.js"></script>
+</body>
+</html>

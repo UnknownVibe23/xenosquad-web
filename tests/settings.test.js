@@ -93,6 +93,34 @@
     t.ok(XS.settings.validateSettings(42).length > 0);
   });
 
+  test("settings: full seeded doctrine snapshot (audit bug list regression guard)", (t) => {
+    // Pins the complete veteran doctrine so any drift from the verified meta
+    // fails CI. If you intentionally change the doctrine, update this snapshot.
+    const expected = {
+      rifleman: { name: "Rifleman", weights: { TU: 2, ACC: 3, RFL: 2, BRV: 1 }, floors: {}, trains: ["ACC", "TU"], frontline: false },
+      scout: { name: "Scout", weights: { TU: 3, RFL: 2, HP: 1.5, ACC: 1, BRV: 1 }, floors: {}, trains: ["TU", "RFL"], frontline: true },
+      sniper: { name: "Sniper", weights: { ACC: 4, RFL: 2, TU: 2.5, BRV: 1 }, floors: { ACC: 65 }, trains: ["ACC", "TU"], frontline: false },
+      mg: { name: "Heavy weapons", weights: { STR: 3, ACC: 3, TU: 1.5 }, floors: { STR: 70 }, trains: ["STR", "ACC"], frontline: false },
+      breacher: { name: "Shield", weights: { RFL: 3, HP: 3, TU: 2, STR: 2, BRV: 2, ACC: 0.5 }, floors: { STR: 55 }, trains: ["TU", "RFL"], frontline: true },
+      assault: { name: "Assault", weights: { RFL: 3, TU: 3, HP: 2, ACC: 1, STR: 1, BRV: 1 }, floors: { ACC: 40 }, trains: ["TU", "RFL"], frontline: true },
+      rocketeer: { name: "Rocketeer", weights: { STR: 3, ACC: 3, TU: 1.5, BRV: 0.5 }, floors: { STR: 70 }, trains: ["STR", "TU"], frontline: false },
+      medic: { name: "Specialist", weights: { TU: 3, BRV: 2, STR: 1 }, floors: {}, trains: ["TU"], frontline: false },
+    };
+    const d = XS.settings.defaultSettings();
+    t.equal(d.global.woundedThreshold, 0.75, "wounded threshold default (audit BUG 18)");
+    d.roles.forEach((r) => {
+      const e = expected[r.id];
+      t.ok(e, "role " + r.id + " is expected in the snapshot");
+      t.equal(r.name, e.name, r.id + " official in-game name");
+      t.deepEqual(r.weights, e.weights, r.id + " weights");
+      t.deepEqual(r.floors, e.floors, r.id + " floors");
+      t.deepEqual(r.trains, e.trains, r.id + " trains");
+      t.equal(r.frontline, e.frontline, r.id + " frontline");
+      t.notOk(r.trains.includes("BRV") || r.trains.includes("HP"), r.id + ": trains never lists BRV/HP (audit BUG 01/02)");
+    });
+    t.equal(d.roles.length, Object.keys(expected).length, "exactly the 8 official classes, no more no less");
+  });
+
   test("settings: includeRecruits is tri-state — false / \"empty\" / true — and round-trips", (t) => {
     const withMode = (v) => {
       const d = XS.settings.defaultSettings();

@@ -74,12 +74,13 @@
     t.equal(result.bench.length, 1);
   });
 
-  test("assignment: zero soldiers -> every seat empty with notices", (t) => {
+  test("assignment: zero soldiers -> every seat empty, reason on the seat card", (t) => {
     const settings = settingsFor(XS.settings.defaultSettings().roles, ["rifleman", "sniper"], {});
     const result = XS.scoring.planSquad([], settings, { solver: XS.hungarian.hungarianMax });
     t.equal(result.picks.length, 2);
     t.ok(result.picks.every((p) => p && !p.soldier), "all seats empty");
-    t.ok(result.notices.length >= 2, "one notice per empty seat");
+    t.ok(result.picks.every((p) => /no eligible soldier/.test(p.why[0])), "each empty pick carries the reason in why (shown on its seat card, not as a notice)");
+    t.notOk(result.notices.some((n) => /left empty/.test(n)), "no per-seat empty notices anymore");
   });
 
   test("assignment: unknown role id in a seat is skipped gracefully", (t) => {
@@ -181,7 +182,7 @@
     // off: only the 2 team soldiers are planned, 1 seat stays empty
     const off = XS.scoring.planSquad(roster, mk(false), { solver: XS.hungarian.hungarianMax });
     t.deepEqual(off.picks.map((p) => (p && p.soldier ? p.soldier.id : "(empty)")).sort(), ["(empty)", "teamA", "teamB"]);
-    t.ok(off.notices.some((n) => /no eligible soldier/.test(n) && /left empty/.test(n)));
+    t.ok(off.picks.some((p) => p && !p.soldier && /no eligible soldier/.test(p.why[0])), "the empty seat's card says why");
     // all: recruits compete everywhere -> the two best recruits + best team soldier
     const all = XS.scoring.planSquad(roster, mk(true), { solver: XS.hungarian.hungarianMax });
     t.deepEqual(all.picks.map((p) => p.soldier.id).sort(), ["rec1", "rec2", "teamA"]);
@@ -208,7 +209,11 @@
     t.ok(emp.notices.some((n) => /Recruits used only for seat/.test(n)));
     const off = XS.scoring.planSquad([teamA, r1], mk(false), { solver: XS.hungarian.hungarianMax });
     t.notOk(off.picks[0].soldier, "off leaves the seat empty");
-    t.ok(off.notices.some((n) => /no eligible soldier/.test(n)));
+    t.ok(/no eligible soldier/.test(off.picks[0].why[0]), "reason is on the pick, not a notice");
+    // "empty" mode: still empty after the recruit pass -> why mentions both pools
+    const empOff = XS.scoring.planSquad([teamA], mk("empty"), { solver: XS.hungarian.hungarianMax });
+    t.notOk(empOff.picks[0].soldier);
+    t.ok(/active team or recruit pool/.test(empOff.picks[0].why[0]), "empty-mode why mentions team + recruit pool");
     // when the team CAN fill every seat, no recruit is used at all
     const role2 = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });
     const teamB = mkSoldier("teamB", { ACC: 70 }); teamB.inTeam = true;

@@ -392,11 +392,16 @@
       }
     }
 
-    // one notice per seat that stayed empty after all passes
+    /*
+     * Seats that stayed empty after all passes are shown on their own seat
+     * card in the UI (pick.why), not as extra notice lines - the card already
+     * says "Seat N - Role" + the reason, so a separate notice per seat would
+     * just duplicate it.
+     */
     for (let j = 0; j < seats.length; j++) {
       const p = picks[j];
       if (p && !p.soldier) {
-        notices.push("Seat " + (j + 1) + " (" + p.role.name + "): no eligible soldier" + (recruitMode === "empty" ? " in the active team or the recruit pool" : "") + ", left empty.");
+        p.why = ["no eligible soldier for this seat" + (recruitMode === "empty" ? " (active team or recruit pool)" : "")];
       }
     }
 

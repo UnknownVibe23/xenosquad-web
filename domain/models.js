@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.18.0";
+  const APP_VERSION = "0.19.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.19.0", note: "Empty seats are now explained directly on their seat card in the suggested squad (\"no eligible soldier for this seat\"), instead of as separate notice lines." },
     { version: "0.18.0", note: "Veteran doctrine update (verified meta): new weights/floors/frontline/trains per role; hard sourced floors STR 70 (Heavy weapons, Rocketeer recoil), ACC 65 (Sniper), STR 55 (Shield), ACC 40 (Assault); trains never list BRV/HP; wounded threshold default 0.5 -> 0.75. Roster table tightened so it fits the panel without inner scrolling." },
     { version: "0.17.0", note: "README reworked (no stale references). Soldiers tab: legend is now a line-per-entry list and the loadout column is cleaned up (save stores loadout strings twice; now deduped, prefixes stripped, no truncation; recruits show their armour). All user-facing texts are em-dash-free, guarded by a test. No em dashes in UI sources, enforced." },
     { version: "0.16.0", note: "Soldiers tab: explicit status column (red = wounded, with the threshold shown); recruits are never marked wounded (in-game they are at full HP; the float in their save block is a different field, now treated as unknown). Slimmer Help tab with this version history. Mission-template cards: tidier spacing + seat count." },

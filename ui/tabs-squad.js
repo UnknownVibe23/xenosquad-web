@@ -286,7 +286,7 @@
       if (!p.soldier) {
         return h("div", { class: "pick empty" }, [
           h("span", { class: "pick-role", text: "Seat " + (p.seatIndex + 1) + " · " + (p.role ? p.role.name : p.roleId) }),
-          h("span", { class: "muted", text: (p.why[0] || "unfilled") }),
+          h("div", { class: "pick-why", text: p.why.join(" · ") }),
         ]);
       }
       const s = p.soldier;

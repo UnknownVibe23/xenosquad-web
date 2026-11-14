@@ -40,10 +40,14 @@
     );
 
     for (const role of roles) {
+      // Layout: [stat name][value box][slider] on ONE row per stat, single
+      // column — the value always directly follows its own stat name, never
+      // lands beside the next stat's label.
       const weightRows = XS.domain.STATS.map((st) => {
         const out = h("output", { class: "w-out", text: String(role.weights[st] || 0) });
         return h("label", { class: "w-row" }, [
           h("span", { class: "w-name", text: st }),
+          out,
           h("input", {
             type: "range",
             min: "0",
@@ -60,7 +64,6 @@
               change: () => app.settingsChanged(),
             },
           }),
-          out,
         ]);
       });
 

@@ -268,10 +268,11 @@ ul.bench li { font-size: 0.88rem; margin-bottom: 0.15rem; word-break: break-word
 .role-head { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 .role-name { font-weight: 700; font-size: 1rem; flex: 1 1 10rem; min-width: 0; }
 .role-btns { display: flex; gap: 0.4rem; }
-.w-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.3rem 1rem; }
-.w-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
-.w-row .w-name { width: 3rem; color: var(--muted); }
-.w-row input[type="range"] { flex: 1; min-width: 0; }
+.w-grid { display: grid; grid-template-columns: 1fr; gap: 0.35rem; max-width: 46rem; }
+.w-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; }
+.w-row .w-name { width: 3rem; flex: none; color: var(--text); font-weight: 600; }
+.w-row .w-out { flex: none; order: 2; }
+.w-row input[type="range"] { flex: 1; min-width: 0; order: 3; }
 .w-out { min-width: 2.2rem; text-align: right; font-variant-numeric: tabular-nums; font-size: 0.85rem; }
 .f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 0.3rem 0.6rem; }
 .f-row { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
@@ -329,7 +330,6 @@ table.roster tbody tr:nth-child(even) { background: #ffffff08; }
   border-radius: 6px;
   padding: 0.05rem 0.3rem;
 }
-.w-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
 
 /* settings advanced (collapsed) section */
 details.panel.advanced summary {

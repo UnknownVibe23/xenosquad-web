@@ -150,7 +150,7 @@
       const counters = roles.map((r) => {
         const c = counts[r.id] || 0;
         return h("div", { class: "tpl-count" }, [
-          XS.dom.icon(r.id, 15),
+          XS.dom.icon(r.id, 20),
           h("span", { class: "tpl-role-name", text: r.name }),
           h("button", {
             type: "button", class: "count-btn", text: "−", disabled: c === 0,
@@ -251,7 +251,7 @@
     const chips = seats.map((roleId, i) =>
       h("div", { class: "seat-chip" }, [
         h("span", { class: "seat-num", text: "#" + (i + 1) }),
-        XS.dom.icon(roleId, 15),
+        XS.dom.icon(roleId, 20),
         roleSelect(i),
         h("button", {
           type: "button", class: "chip-x", text: "×", title: "Remove seat " + (i + 1),
@@ -266,7 +266,7 @@
         class: "quick-add",
         title: "Add a " + r.name + " seat",
         on: { click: () => { seats.push(r.id); app.settingsChanged(); } },
-      }, [XS.dom.icon(r.id, 15), "+ " + r.name])
+      }, [XS.dom.icon(r.id, 20), "+ " + r.name])
     );
 
     main.appendChild(
@@ -313,7 +313,7 @@
       if (!p) return h("div", { class: "pick empty" }, [h("span", { text: "empty seat" })]);
       if (!p.soldier) {
         return h("div", { class: "pick empty" }, [
-          h("span", { class: "pick-role" }, [XS.dom.icon(p.roleId, 16), "Seat " + (p.seatIndex + 1) + " · " + (p.role ? p.role.name : p.roleId)]),
+          h("span", { class: "pick-role" }, [XS.dom.icon(p.roleId, 22), "Seat " + (p.seatIndex + 1) + " · " + (p.role ? p.role.name : p.roleId)]),
           h("div", { class: "pick-why", text: p.why.join(" · ") }),
         ]);
       }
@@ -321,7 +321,7 @@
       const isRecruit = s.inTeam === false;
       return h("div", { class: "pick" + (p.training ? " training" : "") + (isRecruit ? " recruit-pick" : "") }, [
         h("div", { class: "pick-head" }, [
-          h("span", { class: "pick-role" }, [XS.dom.icon(p.roleId, 16), "Seat " + (p.seatIndex + 1) + " · " + p.role.name]),
+          h("span", { class: "pick-role" }, [XS.dom.icon(p.roleId, 22), "Seat " + (p.seatIndex + 1) + " · " + p.role.name]),
           isRecruit ? h("span", { class: "recruit-flag", text: "recruit: hire first" }) : null,
           h("span", { class: "pick-name", text: s.name }),
         ]),

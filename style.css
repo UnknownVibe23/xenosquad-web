@@ -40,6 +40,9 @@ body {
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   padding: 0.75rem 1rem 0;
   border-bottom: 1px solid var(--border);
   background: var(--panel);
@@ -77,6 +80,7 @@ body {
   white-space: nowrap;
 }
 
+.tab:hover { color: var(--text); }
 .tab.active {
   background: var(--bg);
   color: var(--accent);
@@ -163,9 +167,20 @@ button.primary {
   color: #fff;
 }
 
+button:hover { border-color: var(--accent); }
+button.primary:hover { background: #356081; }
 button.danger {
   border-color: var(--danger);
   color: var(--danger);
+}
+button.danger:hover { border-color: var(--danger); background: #ff8f8f22; }
+button:disabled { opacity: 0.45; cursor: default; }
+button:disabled:hover { border-color: var(--border); }
+
+/* visible keyboard focus everywhere (accessibility) */
+button:focus-visible, select:focus-visible, input:focus-visible, .tab:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 input[type="text"], input[type="number"], select, textarea {
@@ -310,8 +325,9 @@ ul.bench li { font-size: 0.88rem; margin-bottom: 0.15rem; word-break: break-word
 .tpl-seats { flex: 2 1 16rem; min-width: 10rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
 .tpl-seats.invalid { border-color: var(--danger); }
 
-/* in-game class icons next to role names (assets/icons/<id>.png) */
-.role-icon { display: inline-block; vertical-align: -4px; margin-right: 0.3rem; border-radius: 4px; }
+/* in-game class icons next to role names (assets/icons/<id>.png); sized in px
+ * at each call site (chips/counters 20, pick cards 22, Roles tab 28) */
+.role-icon { display: inline-block; vertical-align: middle; margin-right: 0.35rem; border-radius: 4px; }
 
 /* team vs recruit badge */
 tr.recruit td { color: var(--muted); }
@@ -346,6 +362,7 @@ table.roster tbody tr:nth-child(even) { background: #ffffff08; }
 
 /* collapsible panels (save inspection, template editor) */
 details.panel > summary { cursor: pointer; font-weight: 700; }
+details.panel > summary:hover, details.tpl-edit > summary:hover { color: var(--accent); }
 details.panel[open] > summary { margin-bottom: 0.5rem; }
 details.tpl-edit > summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
 details.tpl-edit[open] > summary { margin-bottom: 0.4rem; color: var(--text); }
@@ -412,19 +429,20 @@ td.wounded, tr.wounded td .num { color: var(--danger); }
 .tpl-count { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
 .tpl-role-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tpl-num { flex: none; width: 1.8rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0; }
-.count-btn { flex: none; width: 1.9rem; height: 1.65rem; padding: 0; font-size: 1rem; line-height: 1; border-radius: 6px; }
+.count-btn { flex: none; width: 2rem; height: 1.9rem; padding: 0; font-size: 1.05rem; line-height: 1; border-radius: 6px; }
 .count-btn:disabled { opacity: 0.35; cursor: default; }
 .tpl-card .btn-row { margin: 0; }
 
 /* seat builder: quick-add buttons + seat chips */
-.quick-add-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
-.quick-add { border-color: var(--accent); color: var(--accent); background: #2b4a6333; font-weight: 600; }
+.quick-add-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.6rem; }
+.quick-add { border-color: var(--accent); color: var(--accent); background: #2b4a6333; font-weight: 600; padding: 0.45rem 0.75rem; border-radius: 999px; }
+.quick-add:hover { background: #2b4a6355; }
 .seat-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.6rem; }
 .seat-chip {
-  display: flex; align-items: center; gap: 0.4rem;
+  display: flex; align-items: center; gap: 0.45rem;
   background: var(--panel-alt); border: 1px solid var(--border);
-  border-radius: 999px; padding: 0.25rem 0.35rem 0.25rem 0.7rem;
+  border-radius: 999px; padding: 0.3rem 0.4rem 0.3rem 0.75rem;
 }
 .seat-num { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
-.seat-role { max-width: 9.5rem; border-radius: 999px; }
-.chip-x { border-radius: 999px; width: 1.7rem; height: 1.7rem; padding: 0; line-height: 1; color: var(--danger); border-color: var(--danger); }
+.seat-role { max-width: 10.5rem; border-radius: 999px; }
+.chip-x { border-radius: 999px; width: 1.9rem; height: 1.9rem; padding: 0; line-height: 1; color: var(--danger); border-color: var(--danger); }

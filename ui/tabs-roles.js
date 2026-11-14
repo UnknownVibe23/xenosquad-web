@@ -106,7 +106,7 @@
 
       const card = h("section", { class: "panel role-card" }, [
         h("div", { class: "role-head" }, [
-          XS.dom.icon(role.id, 22),
+          XS.dom.icon(role.id, 28),
           h("input", {
             type: "text",
             class: "role-name",

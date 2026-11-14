@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.29.0";
+  const APP_VERSION = "0.30.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.30.0", note: "UI/UX polish: in-game role icons are bigger everywhere (seat chips, quick-add and template counters 20px, pick cards 22px, Roles tab 28px) and align via vertical-align middle; header with the tab bar is now sticky so tabs stay reachable on long pages (incl. vertical 1080x1920); hover states on tabs/buttons/summaries, visible keyboard focus outlines, slightly larger touch targets for the +/- counters and seat remove buttons." },
     { version: "0.29.0", note: "New seeded mission templates: a 6-soldier + Hunter draft variant for each of the 5 default templates (the Hunter scout car fills 2 transport seats, so 6 + Hunter = a full CH-48 Charlie). Compositions researched from community meta per mission type (Hunter's gun/rockets replace the mg/rocketeer seat where useful, reapers cannot hurt it, it cannot enter tight UFO/base interiors, open maps favor the sniper). Existing installs get the new templates appended on upgrade without losing their custom ones." },
     { version: "0.28.0", note: "Save-reading hardening: current HP also falls back to the seat-anchored int when a soldier block has no known role string; the load-time sanity check additionally flags duplicate soldier names and a malformed header in-game date. README now lists the verified real-save sample matrix. All 4 real vanilla saves still parse with zero anomalies." },
     { version: "0.27.0", note: "Current HP located and verified on a new real save: the int32 stored 9 bytes before the role string (right after the transport-seat index) is the soldier's in-game current HP; in the latest save one soldier reads 35 of max 50 while everyone else reads full. The wounded check is ON by default again (threshold 0.75): the roster shows current/max HP and wound %, red rows are wounded, and recruits are never wounded. The sanity check now also flags a current HP above max HP. Calibration migrates on upgrade." },

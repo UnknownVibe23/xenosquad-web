@@ -97,6 +97,44 @@
   /* Sections that have a per-section reset button in the Settings tab. */
   const SECTIONS = ["format", "calibration", "global", "roles", "templates", "seats"];
 
+  /*
+   * Version migrations. deepMerge keeps saved values for keys that exist in
+   * the defaults - which is wrong for sections whose built-in defaults were
+   * corrected/verified in a later version (0.23.0 located the rank field in
+   * postInts[0] and added the PVT->CPL +2 promotion bonus; a settings blob
+   * saved by 0.22.0 has calibration.rank = { kind: "none" } and would stick
+   * forever, so the app would keep showing raw stats and PVT). MIGRATIONS maps
+   * a version -> the sections reset to the NEW defaults when the saved/exported
+   * version is older than that.
+   */
+  const MIGRATIONS = {
+    "0.23.0": ["calibration"],
+  };
+
+  /* Semver-ish compare: -1 / 0 / 1. Missing or non-numeric parts count as 0. */
+  function compareVersions(a, b) {
+    const pa = String(a == null ? "" : a).split(".").map((x) => parseInt(x, 10) || 0);
+    const pb = String(b == null ? "" : b).split(".").map((x) => parseInt(x, 10) || 0);
+    for (let i = 0; i < 3; i++) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d !== 0) return d < 0 ? -1 : 1;
+    }
+    return 0;
+  }
+
+  /* Reset migrated sections of a merged settings object to the new defaults. */
+  function applyMigrations(settings, fromVersion) {
+    for (const v of Object.keys(MIGRATIONS)) {
+      if (compareVersions(fromVersion, v) < 0 && compareVersions(v, XS.domain.APP_VERSION) <= 0) {
+        for (const sec of MIGRATIONS[v]) {
+          const dflt = defaultSettings()[sec];
+          settings[sec] = dflt && typeof dflt === "object" ? JSON.parse(JSON.stringify(dflt)) : dflt;
+        }
+      }
+    }
+    return settings;
+  }
+
   /* Reset one section of a settings object to its built-in defaults. */
   function resetSection(settings, section) {
     if (SECTIONS.indexOf(section) === -1) return settings;
@@ -243,7 +281,8 @@
     if (!isPlainObject(doc.settings)) return { ok: false, errors: ["Export is missing the settings object"] };
     const errors = validateSettings(doc.settings);
     if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, settings: deepMerge(defaultSettings(), doc.settings), errors: [] };
+    // exports written by an older app version are migrated like stored settings
+    return { ok: true, settings: applyMigrations(deepMerge(defaultSettings(), doc.settings), doc.version), errors: [] };
   }
 
   function loadSettings(storage) {
@@ -252,8 +291,11 @@
       if (!raw) return sanitizeSettings(deepMerge(defaultSettings(), {}));
       const doc = JSON.parse(raw);
       // localStorage is user-writable, so corrupted values are sanitized
-      // (coerced back to defaults) instead of trusted
-      return sanitizeSettings(deepMerge(defaultSettings(), isPlainObject(doc) && isPlainObject(doc.settings) ? doc.settings : doc));
+      // (coerced back to defaults) instead of trusted; settings saved by an
+      // older app version get migrated first (see MIGRATIONS)
+      const saved = isPlainObject(doc) && isPlainObject(doc.settings) ? doc.settings : doc;
+      const merged = applyMigrations(deepMerge(defaultSettings(), saved), isPlainObject(doc) ? doc.version : undefined);
+      return sanitizeSettings(merged);
     } catch (e) {
       return sanitizeSettings(deepMerge(defaultSettings(), {}));
     }
@@ -282,6 +324,9 @@
     resetSection,
     deepMerge,
     sanitizeSettings,
+    compareVersions,
+    applyMigrations,
+    MIGRATIONS,
     validateSettings,
     mergeSettings,
     serialize,

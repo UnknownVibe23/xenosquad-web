@@ -192,6 +192,37 @@
     t.equal(XS.domain.rankLabel(null), "PVT", "missing rank degrades to PVT");
   });
 
+  test("settings: version migrations reset corrected sections from OLDER saved/exported settings only", (t) => {
+    // simulate a 0.22.0-era localStorage blob: rank mapping disabled, no promotionBonus
+    const st = fakeStorage();
+    st.setItem("xenosquad-web.settings", JSON.stringify({
+      app: "xenosquad-web",
+      version: "0.22.0",
+      settings: { calibration: { statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 }, currentHP: { kind: "float" }, rank: { kind: "none" } }, global: { psiEra: true } },
+    }));
+    const loaded = XS.settings.loadSettings(st);
+    t.deepEqual(loaded.calibration.rank, { kind: "postInt", index: 0 }, "calibration reset to the newly verified defaults on upgrade");
+    t.deepEqual(loaded.calibration.promotionBonus, { rankPointsAtOrAbove: 3, bonus: 2 }, "promotion bonus default applied");
+    t.equal(loaded.global.psiEra, true, "other sections keep their saved values");
+    // same-version storage is NOT migrated: a custom calibration survives
+    const st2 = fakeStorage();
+    const s = XS.settings.defaultSettings();
+    s.calibration.rank = { kind: "experience" };
+    XS.settings.saveSettings(st2, s);
+    const loaded2 = XS.settings.loadSettings(st2);
+    t.equal(loaded2.calibration.rank.kind, "experience", "same-version settings untouched (kind survives; inert keys merge from defaults)");
+    // an old export file migrates on import too
+    const oldExport = JSON.stringify({ app: "xenosquad-web", version: "0.22.0", settings: { calibration: { rank: { kind: "none" } } } });
+    const imp = XS.settings.deserialize(oldExport);
+    t.ok(imp.ok);
+    t.deepEqual(imp.settings.calibration.rank, { kind: "postInt", index: 0 }, "old export migrated on import");
+    // version compare helper
+    t.ok(XS.settings.compareVersions("0.22.0", "0.23.0") < 0);
+    t.ok(XS.settings.compareVersions("0.23.0", "0.23.0") === 0);
+    t.ok(XS.settings.compareVersions("0.9.0", "0.10.0") < 0, "numeric, not lexicographic");
+    t.ok(XS.settings.compareVersions(undefined, "0.23.0") < 0, "unknown version migrates (safe)");
+  });
+
   test("settings: VERSION_HISTORY is newest-first, unique, and starts at APP_VERSION", (t) => {
     const vh = XS.domain.VERSION_HISTORY;
     t.ok(Array.isArray(vh) && vh.length >= 10, "history covers the milestones");

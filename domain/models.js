@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.23.0";
+  const APP_VERSION = "0.24.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.24.0", note: "Bug fix: settings saved by older versions no longer stick (version migrations now reset corrected sections, so the 0.23.0 rank mapping + promotion bonus actually apply on upgrade); imports from old export files migrate too." },
     { version: "0.23.0", note: "Save format update verified against a fresh-game save + roster screenshot: postInts[0] is rank POINTS (gameconfig soldierRanks; PVT 0, CPL 3, SGT 9, LT 16, CPT 30), and the first promotion (PVT -> CPL) adds +2 to EVERY stat without storing it in the stat ints, so the app now adds that bonus to displayed/used stats (calibration.promotionBonus). Rank is now located: shown as a name in the roster and the rank tie-breaker is enabled." },
     { version: "0.22.0", note: "Full hardening pass (redteam): new tests/security.test.js (parser fuzzing, hostile settings imports, source scans for network/eval/cookie/HTML sinks + CSP checks, determinism fuzz, Hungarian vs brute force). Real bug found and fixed: the training seat could reserve a soldier who fails the seat's floors; it now picks the lowest-composite soldier among those eligible for the seat. Settings imports are validated and corrupted localStorage is sanitized." },
     { version: "0.21.0", note: "Squad tab decluttered: core flow is now load -> squad request -> suggested squad at the top; save inspection and the template editor moved into collapsed panels below (template apply dropdown stays visible)." },

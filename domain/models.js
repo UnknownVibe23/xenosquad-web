@@ -26,11 +26,7 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-<<<<<<< HEAD
-  const APP_VERSION = "0.10.0";
-=======
   const APP_VERSION = "0.11.0";
->>>>>>> origin/vibe/recruit-pick-badge-2aa8b1
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */

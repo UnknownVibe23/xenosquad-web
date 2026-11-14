@@ -46,9 +46,13 @@ No build step is needed: the deployed site is exactly the files in this repo.
   least once, **Require status checks to pass** → add the `test (node 22)` check.
   Allowed merge methods: *squash* (clean linear history). Approvals: 0 for a solo repo,
   raise to 1 when a teammate joins. Leave signed commits / code scanning off for now.
-- Day-to-day flow: work on a short-lived `vibe/<slug>` branch → open a PR to `main` →
-  CI green → squash-merge → delete the head branch (enable "Automatically delete head
-  branches" in Settings → General).
+- Day-to-day flow (chosen by the repo owner): all work accumulates on ONE integration
+  branch `vibe/work-2aa8b1` → CI runs on every push to it → when satisfied, merge
+  `vibe/work-2aa8b1` into `main` (squash or merge commit) and delete the branch; the
+  next round starts from a fresh `vibe/work-2aa8b1` created from the new `main`.
+  Enable "Automatically delete head branches" in Settings → General as a safety net.
+  (Per-change PR branches are the alternative for bigger teams; this repo uses the
+  single integration branch.)
 
 ## Using the app
 

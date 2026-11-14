@@ -182,7 +182,7 @@
     t.deepEqual(r1, r2);
   });
 
-  test("planSquad: fewer eligible soldiers than seats pads and leaves seats empty with a notice", (t) => {
+  test("planSquad: fewer eligible soldiers than seats pads and leaves seats empty (reason on the card)", (t) => {
     const roster = [mkSoldier("a", { ACC: 60 }), mkSoldier("b", { ACC: 70 }), mkSoldier("wounded", { ACC: 80 }, 10)];
     const settings = settingsWith({ woundedThreshold: 0.5 });
     settings.roles = [XS.domain.makeRole({ id: "rifleman", name: "Rifleman", weights: { ACC: 3 } })];
@@ -191,8 +191,10 @@
     t.equal(result.ineligible.length, 1, "wounded soldier excluded");
     const filled = result.picks.filter((p) => p && p.soldier);
     t.equal(filled.length, 2, "only 2 eligible soldiers -> 2 seats filled");
-    t.equal(result.picks.filter((p) => p && !p.soldier).length, 2, "2 seats left empty");
-    t.ok(result.notices.filter((n) => /no eligible soldier/.test(n)).length >= 1);
+    const empty = result.picks.filter((p) => p && !p.soldier);
+    t.equal(empty.length, 2, "2 seats left empty");
+    t.ok(empty.every((p) => /no eligible soldier/.test(p.why[0])), "empty seats carry the reason in why (rendered on their card)");
+    t.notOk(result.notices.some((n) => /left empty/.test(n)), "no per-seat notices");
   });
 
   test("planSquad: training seat reserves one seat for the lowest-composite healthy soldier", (t) => {

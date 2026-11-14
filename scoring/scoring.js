@@ -475,6 +475,52 @@
     return { entries, threshold, median, teamSize: team.length, upkeep };
   }
 
+  /*
+   * hireList(soldiers, settings) -> { entries, threshold, median, recruitCount, hireCost, upkeep }.
+   *
+   * The inverse of the dismiss list: which RECRUITS (inTeam === false) are
+   * worth hiring. Recruits are scored with the SAME normalization as the
+   * active team (norms over the team roster, like the "empty seats" recruit
+   * pass in planSquad), so composites are directly comparable with the
+   * dismiss list's scale. A recruit is worth hiring when its composite is at
+   * least settings.dismiss.hireFraction x the team median composite (default
+   * 1.0: at least as good as the median team soldier). Entries are best-first.
+   * In vanilla X1 hiring costs a flat $10,000 plus the $10,000/month salary
+   * (wiki). Pure and deterministic.
+   */
+  function hireList(soldiers, settings) {
+    const d = (settings && settings.dismiss) || {};
+    const hireFraction = typeof d.hireFraction === "number" && Number.isFinite(d.hireFraction) ? d.hireFraction : 1.0;
+    const hireMaxListed = Number.isInteger(d.hireMaxListed) && d.hireMaxListed > 0 ? d.hireMaxListed : 0;
+    const upkeep = typeof d.soldierUpkeep === "number" && Number.isFinite(d.soldierUpkeep) ? d.soldierUpkeep : 10000;
+    const hireCost = typeof d.hireCost === "number" && Number.isFinite(d.hireCost) ? d.hireCost : 10000;
+    const team = (soldiers || []).filter((s) => s.inTeam !== false);
+    const recruits = (soldiers || []).filter((s) => s.inTeam === false);
+    if (team.length === 0 || recruits.length === 0) {
+      return { entries: [], threshold: 0, median: 0, recruitCount: recruits.length, hireCost, upkeep };
+    }
+    const norms = normalizeRoster(team);
+    const asc = team.map((s) => composite(norms.norm, s)).sort((a, b) => a - b);
+    const median = asc[Math.floor(asc.length / 2)];
+    const threshold = hireFraction * median;
+    let entries = recruits
+      .map((s) => ({ soldier: s, composite: composite(norms.norm, s) }))
+      .filter((x) => x.composite >= threshold)
+      .sort((a, b) => b.composite - a.composite || (a.soldier.id < b.soldier.id ? -1 : 1))
+      .map((x) => ({
+        soldier: x.soldier,
+        composite: x.composite,
+        median,
+        fraction: median > 0 ? x.composite / median : 0,
+        rankLabel: domain().rankLabel(x.soldier.rank),
+        hireCost,
+        upkeep,
+        hpFraction: null, // recruits are at full HP in-game
+      }));
+    if (hireMaxListed > 0) entries = entries.slice(0, hireMaxListed);
+    return { entries, threshold, median, recruitCount: recruits.length, hireCost, upkeep };
+  }
+
   return {
     FORBIDDEN,
     RANK_EPS,
@@ -489,5 +535,6 @@
     greedyAssign,
     planSquad,
     dismissList,
+    hireList,
   };
 });

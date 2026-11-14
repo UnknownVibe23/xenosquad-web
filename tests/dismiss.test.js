@@ -69,14 +69,53 @@
 
   test("dismiss: settings defaults + validation/sanitization for the dismiss section", (t) => {
     const d = XS.settings.defaultSettings();
-    t.deepEqual(d.dismiss, { belowFraction: 0.7, soldierUpkeep: 10000, maxListed: 0 }, "defaults: 70% of median, $10k/mo flat vanilla salary, no cap");
+    t.deepEqual(d.dismiss, { belowFraction: 0.7, soldierUpkeep: 10000, maxListed: 0, hireFraction: 0.9, hireMaxListed: 5, hireCost: 10000 }, "defaults: 70% of median dismiss, $10k/mo salary, hire at/above 90% of median capped at 5, $10k hire cost");
     t.ok(XS.settings.SECTIONS.indexOf("dismiss") !== -1, "dismiss is a resettable section");
-    const bad = { dismiss: { belowFraction: 5, soldierUpkeep: -1, maxListed: -3 } };
+    const bad = { dismiss: { belowFraction: 5, soldierUpkeep: -1, maxListed: -3, hireFraction: 99, hireMaxListed: -1, hireCost: "x" } };
     const errs = XS.settings.validateSettings(bad);
     t.ok(errs.some((e) => /dismiss\.belowFraction/.test(e)) && errs.some((e) => /dismiss\.soldierUpkeep/.test(e)) && errs.some((e) => /dismiss\.maxListed/.test(e)), "invalid dismiss values rejected on import");
+    t.ok(errs.some((e) => /dismiss\.hireFraction/.test(e)) && errs.some((e) => /dismiss\.hireMaxListed/.test(e)) && errs.some((e) => /dismiss\.hireCost/.test(e)), "invalid hire values rejected on import");
     const s = XS.settings.defaultSettings();
-    s.dismiss = { belowFraction: "lots", soldierUpkeep: null, maxListed: 1.5 };
+    s.dismiss = { belowFraction: "lots", soldierUpkeep: null, maxListed: 1.5, hireFraction: -2, hireMaxListed: 0.5, hireCost: -1 };
     const san = XS.settings.sanitizeSettings(s);
     t.deepEqual(san.dismiss, d.dismiss, "corrupted dismiss section sanitized back to defaults");
+  });
+
+  test("hire: lists only recruits at/above the fraction of the team median, best first; costs carried; deterministic", (t) => {
+    const soldiers = rosterOf({ seed: 311, soldiers: 12, recruitEvery: 3 }); // 8 team, 4 recruits
+    const settings = XS.settings.defaultSettings();
+    const hl = XS.scoring.hireList(soldiers, settings);
+    t.equal(hl.recruitCount, 4, "recruit pool size");
+    hl.entries.forEach((e) => {
+      t.ok(e.soldier.inTeam === false, "only recruits listed: " + e.soldier.name);
+      t.ok(e.composite >= hl.threshold - 1e-12, e.soldier.name + " at/above threshold");
+      t.approx(hl.threshold, 0.9 * hl.median, 1e-9, "default hireFraction 0.9 of team median");
+      t.equal(e.hireCost, 10000, "vanilla hire cost");
+      t.equal(e.upkeep, 10000, "vanilla monthly salary");
+      t.equal(e.hpFraction, null, "recruits: full HP in-game");
+    });
+    for (let i = 1; i < hl.entries.length; i++) t.ok(hl.entries[i - 1].composite >= hl.entries[i].composite, "sorted best-first");
+    t.ok(hl.entries.length <= 5, "default cap 5 respected");
+    const a = XS.scoring.hireList(soldiers, XS.settings.defaultSettings());
+    const b = XS.scoring.hireList(soldiers, XS.settings.defaultSettings());
+    t.deepEqual(a, b, "deterministic");
+  });
+
+  test("hire: threshold and cap are settings-driven; empty team/pool degrade gracefully", (t) => {
+    const soldiers = rosterOf({ seed: 312, soldiers: 10, recruitEvery: 2 });
+    const sLow = XS.settings.defaultSettings();
+    sLow.dismiss.hireFraction = 0; // threshold 0 -> every recruit listed (up to cap)
+    sLow.dismiss.hireMaxListed = 0; // no cap
+    const all = XS.scoring.hireList(soldiers, sLow);
+    t.equal(all.entries.length, all.recruitCount, "fraction 0 lists the whole pool");
+    const sCap = XS.settings.defaultSettings();
+    sCap.dismiss.hireFraction = 0;
+    sCap.dismiss.hireMaxListed = 2;
+    t.equal(XS.scoring.hireList(soldiers, sCap).entries.length, 2, "hireMaxListed caps the hire list");
+    t.equal(XS.scoring.hireList([], XS.settings.defaultSettings()).entries.length, 0, "empty roster");
+    const teamOnly = rosterOf({ seed: 313, soldiers: 6 }); // no recruits
+    const hl = XS.scoring.hireList(teamOnly, XS.settings.defaultSettings());
+    t.equal(hl.recruitCount, 0);
+    t.equal(hl.entries.length, 0, "no recruits -> empty hire list");
   });
 })(typeof self !== "undefined" ? self : globalThis);

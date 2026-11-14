@@ -106,7 +106,7 @@
         h("h2", { text: "Dismiss candidates: " + dismiss.entries.length + " of " + dismiss.teamSize + " hired soldiers below " + belowPct + "% of the team median" }),
         h("p", {
           class: "muted",
-          text: "Hired (active-team) soldiers whose composite stat score is below " + belowPct + "% of the active team's median composite (" + dismiss.median.toFixed(2) + "). In vanilla Xenonauts 1 every hired soldier costs a flat $" + dismiss.upkeep.toLocaleString() + "/month (wiki), so these are not worth the upkeep. Recruits are never listed (free until hired). This is a list to act on in-game; the app cannot dismiss anyone itself. Adjust the threshold, upkeep and cap in Settings, group \"Dismissal list\".",
+          text: "Hired (active-team) soldiers whose composite stat score is below " + belowPct + "% of the active team's median composite (" + dismiss.median.toFixed(2) + "). In vanilla Xenonauts 1 every hired soldier costs a flat $" + dismiss.upkeep.toLocaleString() + "/month (wiki), so these are not worth the upkeep. Recruits are never listed (free until hired). This is a list to act on in-game; the app cannot dismiss anyone itself. Adjust the threshold, upkeep and cap in Settings, group \"Dismissal & hire lists\".",
         }),
         dismiss.entries.length === 0
           ? h("p", { class: "muted", text: "Nobody is below the threshold right now." })
@@ -117,6 +117,32 @@
                 h("strong", { text: e.soldier.name }),
                 h("span", {
                   text: "  composite " + e.composite.toFixed(2) + " (" + Math.round(e.fraction * 100) + "% of median " + e.median.toFixed(2) + "), " + e.rankLabel + ", $" + e.upkeep.toLocaleString() + "/mo" + (e.hpFraction != null ? ", HP " + Math.round(e.hpFraction * 100) + "%" : "") + "; candidate to dismiss in-game",
+                }),
+              ])
+            )),
+      ])
+    );
+
+    // hire candidates: recruits worth hiring (inverse of the dismiss list;
+    // scored on the same team normalization, pure logic XS.scoring.hireList)
+    const hire = XS.scoring.hireList(state.roster, state.settings);
+    const hirePct = Math.round((typeof dm.hireFraction === "number" ? dm.hireFraction : 1) * 100);
+    main.appendChild(
+      h("section", { class: "panel" }, [
+        h("h2", { text: "Hire candidates: " + hire.entries.length + " of " + hire.recruitCount + " recruits at/above " + hirePct + "% of the team median" }),
+        h("p", {
+          class: "muted",
+          text: "Recruitable soldiers whose composite stat score is at least " + hirePct + "% of the active team's median composite (" + hire.median.toFixed(2) + "), best first. Recruits are PVT and do not have the +2 promotion bonus yet, so the default 90% bar already accounts for that. Hiring one costs $" + hire.hireCost.toLocaleString() + " plus the $" + hire.upkeep.toLocaleString() + "/month salary (vanilla X1, wiki); recruits are at full HP in-game. Hire them in-game; a recruit picked for the squad also gets a \"hire first\" badge on the Squad tab. Adjust in Settings, group \"Dismissal & hire lists\".",
+        }),
+        hire.entries.length === 0
+          ? h("p", { class: "muted", text: "No recruit reaches the threshold right now." })
+          : h("ul", {
+              class: "bench",
+            }, hire.entries.map((e) =>
+              h("li", {}, [
+                h("strong", { text: e.soldier.name }),
+                h("span", {
+                  text: "  composite " + e.composite.toFixed(2) + " (" + Math.round(e.fraction * 100) + "% of median " + e.median.toFixed(2) + "), " + e.rankLabel + ", $" + e.hireCost.toLocaleString() + " hire + $" + e.upkeep.toLocaleString() + "/mo; worth hiring in-game",
                 }),
               ])
             )),

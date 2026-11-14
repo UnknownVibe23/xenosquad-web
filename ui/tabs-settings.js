@@ -39,6 +39,7 @@
     const thresholdOut = h("output", { class: "w-out", text: String(g.woundedThreshold) });
     const encOut = h("output", { class: "w-out", text: String(g.encumbranceLimit) });
     const dismissOut = h("output", { class: "w-out", text: String(d.belowFraction) });
+    const hireOut = h("output", { class: "w-out", text: String(d.hireFraction) });
     const sliderRow = (label, value, out, min, max, step, onInput) =>
       h("label", { class: "set-row" }, [
         h("span", { text: label }),
@@ -77,10 +78,13 @@
           XS.ui.recruitModeSelect(state),
           h("p", { class: "muted", text: "Picked recruits are always marked 'hire first' on their pick card, so you know to hire them in-game before the mission." }),
         ]),
-        group("Dismissal list (Soldiers tab)", [
+        group("Dismissal & hire lists (Soldiers tab)", [
           sliderRow("Flag hired soldiers below this fraction of the active team's median composite", d.belowFraction, dismissOut, 0, 1, 0.05, (v) => { d.belowFraction = v; }),
           numField("Monthly upkeep per hired soldier ($; vanilla X1 is a flat 10000)", d.soldierUpkeep, (v) => { if (Number.isFinite(v) && v >= 0) { d.soldierUpkeep = v; app.settingsChanged(); } }),
           numField("Max names on the dismiss list (0 = no cap)", d.maxListed, (v) => { if (Number.isFinite(v)) { d.maxListed = Math.trunc(v); app.settingsChanged(); } }),
+          sliderRow("List recruits at/above this fraction of the team median as hire candidates", d.hireFraction, hireOut, 0, 2, 0.05, (v) => { d.hireFraction = v; }),
+          numField("Max names on the hire list (0 = no cap)", d.hireMaxListed, (v) => { if (Number.isFinite(v)) { d.hireMaxListed = Math.trunc(v); app.settingsChanged(); } }),
+          numField("One-time hire cost per soldier ($; vanilla X1 is a flat 10000)", d.hireCost, (v) => { if (Number.isFinite(v) && v >= 0) { d.hireCost = v; app.settingsChanged(); } }),
         ]),
         h("p", {}, [h("button", { type: "button", text: "Reset global to defaults", on: { click: () => { XS.settings.resetSection(s, "global"); app.settingsChanged(); } } })]),
       ])

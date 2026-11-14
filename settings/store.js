@@ -109,7 +109,10 @@
       dismiss: {
         belowFraction: 0.7, // flag in-team soldiers below 70% of the team median composite
         soldierUpkeep: 10000, // $/month per hired soldier (vanilla X1 flat salary, wiki)
-        maxListed: 0, // 0 = no cap
+        maxListed: 0, // 0 = no cap on the dismiss list
+        hireFraction: 0.9, // list recruits at/above this fraction of the team median composite; 90% because recruits are PVT (no +2 promotion bonus yet) while veterans carry it, so ~90% of median is still a good hire (measured on real saves: top recruits land at 90-115%)
+        hireMaxListed: 5, // cap on the hire list (the pool can be long)
+        hireCost: 10000, // $ one-time hire cost per soldier (vanilla X1, wiki)
       },
       roles: XS.domain.defaultRoles(),
       /* The seat builder: a role id per seat. Defaults to 8 seats. */
@@ -231,6 +234,9 @@
     if (typeof dd.belowFraction !== "number" || !Number.isFinite(dd.belowFraction) || dd.belowFraction < 0 || dd.belowFraction > 1) dd.belowFraction = d.dismiss.belowFraction;
     if (typeof dd.soldierUpkeep !== "number" || !Number.isFinite(dd.soldierUpkeep) || dd.soldierUpkeep < 0 || dd.soldierUpkeep > 1e9) dd.soldierUpkeep = d.dismiss.soldierUpkeep;
     if (!Number.isInteger(dd.maxListed) || dd.maxListed < 0 || dd.maxListed > 100000) dd.maxListed = d.dismiss.maxListed;
+    if (typeof dd.hireFraction !== "number" || !Number.isFinite(dd.hireFraction) || dd.hireFraction < 0 || dd.hireFraction > 5) dd.hireFraction = d.dismiss.hireFraction;
+    if (!Number.isInteger(dd.hireMaxListed) || dd.hireMaxListed < 0 || dd.hireMaxListed > 100000) dd.hireMaxListed = d.dismiss.hireMaxListed;
+    if (typeof dd.hireCost !== "number" || !Number.isFinite(dd.hireCost) || dd.hireCost < 0 || dd.hireCost > 1e9) dd.hireCost = d.dismiss.hireCost;
     settings.dismiss = dd;
     const f = isPlainObject(settings.format) ? settings.format : {};
     if (typeof f.marker !== "string" || f.marker.length === 0 || f.marker.length > 64) f.marker = d.format.marker;
@@ -317,6 +323,9 @@
         if (obj.dismiss.belowFraction !== undefined && (typeof obj.dismiss.belowFraction !== "number" || !Number.isFinite(obj.dismiss.belowFraction) || obj.dismiss.belowFraction < 0 || obj.dismiss.belowFraction > 1)) errors.push("dismiss.belowFraction must be a number in [0, 1]");
         if (obj.dismiss.soldierUpkeep !== undefined && (typeof obj.dismiss.soldierUpkeep !== "number" || !Number.isFinite(obj.dismiss.soldierUpkeep) || obj.dismiss.soldierUpkeep < 0 || obj.dismiss.soldierUpkeep > 1e9)) errors.push("dismiss.soldierUpkeep must be a number in [0, 1e9]");
         if (obj.dismiss.maxListed !== undefined && (!Number.isInteger(obj.dismiss.maxListed) || obj.dismiss.maxListed < 0 || obj.dismiss.maxListed > 100000)) errors.push("dismiss.maxListed must be an integer in 0..100000");
+        if (obj.dismiss.hireFraction !== undefined && (typeof obj.dismiss.hireFraction !== "number" || !Number.isFinite(obj.dismiss.hireFraction) || obj.dismiss.hireFraction < 0 || obj.dismiss.hireFraction > 5)) errors.push("dismiss.hireFraction must be a number in [0, 5]");
+        if (obj.dismiss.hireMaxListed !== undefined && (!Number.isInteger(obj.dismiss.hireMaxListed) || obj.dismiss.hireMaxListed < 0 || obj.dismiss.hireMaxListed > 100000)) errors.push("dismiss.hireMaxListed must be an integer in 0..100000");
+        if (obj.dismiss.hireCost !== undefined && (typeof obj.dismiss.hireCost !== "number" || !Number.isFinite(obj.dismiss.hireCost) || obj.dismiss.hireCost < 0 || obj.dismiss.hireCost > 1e9)) errors.push("dismiss.hireCost must be a number in [0, 1e9]");
       }
     }
     if (obj.roles !== undefined) {

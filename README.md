@@ -103,6 +103,29 @@ Tests are hand-written and zero-dependency. Save-file test input is **synthetic*
 with `node tools/make-fixture.js` (writes `fixtures/synthetic-planner.sav`, invented names
 like "Test Soldier 1"). Never commit a real save or real soldier names.
 
+## Doctrine basis (why the seeded role weights/floors look like this)
+
+Reviewed against community meta: the Xenonauts Wiki (stats, reaction fire), the Steam guide
+*"A Xenonauts 1 Essential Weapon Class Tactics Guide"*, Arqade squad-composition/carry-weight
+Q&As, and r/Xenonauts class-stat threads. Key mechanics that shape the defaults:
+
+- Reaction fire is deterministic initiative = **RFL × weapon reaction modifier × %TU left** →
+  frontline/door roles (breacher, assault) weight RFL highest; shotguns/pistols get 1.5×.
+- **Heavy weapons aim with min(STR, ACC)**, plus an extra penalty below 70 STR → MG/rocketeer
+  weight STR and ACC equally. The 70 is *not* used as a hard floor (too strict early — rosters
+  rarely have 70+ STR then); the floor stays a sanity bar at 55 and the weights pick the best
+  min(STR,ACC) soldier.
+- **Carrying capacity = 8 kg + 0.3 kg × STR** (gameconfig.xml); the TU penalty starts above
+  **100 %** of capacity, while **80 %** is the threshold at which moving trains STR (that's what
+  `strength_training` roles invert to). The app models this with `strCapacityBase`,
+  `strCapacityCoef`, `encumbranceLimit` (default 1.0) and `strTrainThreshold` (0.8) in Settings.
+- **BRV is the scarcest stat** (trains only via panic/medals/psi defense) → the psi-era
+  frontline BRV floor; sniper keeps some BRV because exposed overwatch positions panic.
+- 8-man squad meta is 2 shield / 2 assault / 2 riflemen / 1 sniper / 1 heavy → the seeded
+  "Crash site" template.
+
+Everything remains plain data in the Roles tab/Settings — change anything live.
+
 ## Architecture
 
 - `parser/` — binary save extraction (pure: buffer in, data out)

@@ -53,18 +53,24 @@
     t.notOk(XS.scoring.roleEligibility(mkSoldier("b", { ACC: 54 }), role, s).ok);
   });
 
-  test("role eligibility: encumbrance check and its strength_training inversion", (t) => {
-    const s = settingsWith({ encumbranceLimit: 0.8, strCapacityFactor: 1 });
-    const role = XS.domain.makeRole({ id: "mg", weights: {}, kitWeight: 40 });
-    // STR 50 -> capacity 50, limit 40: kit 40 is allowed (<=), 41 is not
-    t.ok(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), role, s).ok, "kit == limit passes");
-    const heavy = XS.domain.makeRole({ id: "mg2", weights: {}, kitWeight: 41 });
-    t.notOk(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), heavy, s).ok);
-    t.ok(XS.scoring.roleEligibility(mkSoldier("b", { STR: 60 }), heavy, s).ok, "STR 60 -> limit 48 >= 41");
-    // strength_training inverts: the same heavy role now REQUIRES overload
-    const trainer = XS.domain.makeRole({ id: "mg3", weights: {}, kitWeight: 41, strengthTraining: true });
-    t.ok(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), trainer, s).ok, "41 > 40 -> overload achieved on purpose");
-    t.notOk(XS.scoring.roleEligibility(mkSoldier("b", { STR: 60 }), trainer, s).ok, "41 <= 48 -> no overload, fails");
+  test("role eligibility: encumbrance check (game formula: capacity = 8 + 0.3×STR kg) and strength_training inversion", (t) => {
+    // defaults: base 8, coef 0.3, limit 1.0, train threshold 0.8
+    const s = settingsWith({});
+    // STR 50 -> capacity 8 + 15 = 23 kg; limit 1.0 -> 23 kg: kit 23 passes, 24 fails
+    const role = XS.domain.makeRole({ id: "mg", weights: {}, kitWeight: 23 });
+    t.ok(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), role, s).ok, "kit == capacity passes (no TU penalty up to 100%)");
+    const heavy = XS.domain.makeRole({ id: "mg2", weights: {}, kitWeight: 24 });
+    t.notOk(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), heavy, s).ok, "24 > 23 kg -> TU penalty");
+    t.ok(XS.scoring.roleEligibility(mkSoldier("b", { STR: 60 }), heavy, s).ok, "STR 60 -> capacity 26 kg >= 24");
+    // strength_training inverts against the 0.8 training threshold:
+    // STR 50 -> train at 0.8 x 23 = 18.4 kg: kit 19+ overloads (trains STR), kit 18 does not
+    const trainer = XS.domain.makeRole({ id: "mg3", weights: {}, kitWeight: 19, strengthTraining: true });
+    t.ok(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), trainer, s).ok, "19 > 18.4 -> above STR-training threshold on purpose");
+    const light = XS.domain.makeRole({ id: "mg4", weights: {}, kitWeight: 18, strengthTraining: true });
+    t.notOk(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), light, s).ok, "18 <= 18.4 -> below threshold, fails");
+    // custom limit: encumbranceLimit 0.5 halves the no-penalty load
+    const s2 = settingsWith({ encumbranceLimit: 0.5 });
+    t.notOk(XS.scoring.roleEligibility(mkSoldier("a", { STR: 50 }), role, s2).ok, "23 > 0.5 x 23 = 11.5 -> fails at limit 0.5");
   });
 
   test("role eligibility: psi era applies the BRV floor only to frontline roles", (t) => {

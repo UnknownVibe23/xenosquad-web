@@ -21,9 +21,13 @@
  *   5. tie-breakers    — higher rank first, then training fit of the seat;
  *   6. training seat   — optionally reserve one seat for the lowest-composite
  *                        healthy soldier so rookies ride along;
- *   7. encumbrance     — kit_weight must stay at/below the limit fraction of
- *                        STR capacity (inverted on purpose if the role sets
- *                        strength_training).
+ *   7. encumbrance     — kit_weight must stay at/below encumbranceLimit x
+ *                        capacity to avoid the TU penalty, where capacity =
+ *                        strCapacityBase + strCapacityCoef x STR kg (the
+ *                        game's own formula from gameconfig.xml). Roles with
+ *                        strength_training invert the check against
+ *                        strTrainThreshold (0.8 in the game): load past 80% of
+ *                        capacity on purpose to train STR while moving.
  *
  * Tie-breakers are folded into the matrix as tiny epsilon additions
  * (rank * 1e-6, then training fit * 1e-9): normalized stat gaps are orders of
@@ -134,12 +138,20 @@
     const str = soldier.stats.STR;
     const kit = typeof role.kitWeight === "number" ? role.kitWeight : 0;
     if (typeof str === "number" && kit > 0) {
-      const capacity = str * (typeof g.strCapacityFactor === "number" ? g.strCapacityFactor : 1);
-      const limit = (typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 0.8) * capacity;
+      // gameconfig.xml: capacity(kg) = 8 + 0.3 * STR
+      const base = typeof g.strCapacityBase === "number" ? g.strCapacityBase : 8;
+      const coef = typeof g.strCapacityCoef === "number" ? g.strCapacityCoef : 0.3;
+      const capacity = base + coef * str;
       if (role.strengthTraining) {
-        if (!(kit > limit)) reasons.push("kit " + kit + " not above " + Math.round(limit) + " (strength_training wants overload)");
-      } else if (kit > limit) {
-        reasons.push("kit " + kit + " > " + Math.round(limit) + " (" + Math.round((typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 0.8) * 100) + "% of STR capacity " + Math.round(capacity) + ")");
+        // inverted on purpose: load past the STR-training threshold (game: 80%)
+        const trainAt = (typeof g.strTrainThreshold === "number" ? g.strTrainThreshold : 0.8) * capacity;
+        if (!(kit > trainAt)) reasons.push("kit " + kit + " not above " + trainAt.toFixed(1) + " kg (" + Math.round((typeof g.strTrainThreshold === "number" ? g.strTrainThreshold : 0.8) * 100) + "% of capacity " + capacity.toFixed(1) + " kg) — strength_training wants overload to train STR");
+      } else {
+        // avoid the TU penalty: load must stay at/below the limit fraction of capacity
+        const limit = (typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 1.0) * capacity;
+        if (kit > limit) {
+          reasons.push("kit " + kit + " kg > " + limit.toFixed(1) + " kg (" + Math.round((typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 1.0) * 100) + "% of capacity " + capacity.toFixed(1) + " kg) — TU penalty");
+        }
       }
     } else if (kit > 0) {
       reasons.push("STR unknown, cannot verify encumbrance");

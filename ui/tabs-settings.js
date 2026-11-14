@@ -53,7 +53,7 @@
             thresholdOut,
           ]),
           h("label", { class: "set-row" }, [
-            h("span", { text: "Encumbrance limit (fraction of STR capacity)" }),
+            h("span", { text: "Encumbrance limit (fraction of capacity; 1.0 = TU penalty only above full capacity)" }),
             h("input", {
               type: "range", min: "0", max: "1", step: "0.05", value: String(g.encumbranceLimit),
               on: {
@@ -63,7 +63,9 @@
             }),
             encOut,
           ]),
-          numField("STR capacity factor (capacity = STR × factor)", g.strCapacityFactor, (v) => { if (Number.isFinite(v)) { g.strCapacityFactor = v; app.settingsChanged(); } }),
+          numField("STR capacity base (kg)", g.strCapacityBase, (v) => { if (Number.isFinite(v)) { g.strCapacityBase = v; app.settingsChanged(); } }),
+          numField("STR capacity per STR point (kg) — capacity = base + coef × STR (game: 8 + 0.3×STR)", g.strCapacityCoef, (v) => { if (Number.isFinite(v)) { g.strCapacityCoef = v; app.settingsChanged(); } }),
+          numField("STR training threshold (fraction of capacity; used by strength-training roles)", g.strTrainThreshold, (v) => { if (Number.isFinite(v)) { g.strTrainThreshold = v; app.settingsChanged(); } }),
           checkField("Psi era (late-game psi threats)", g.psiEra, (v) => { g.psiEra = v; app.settingsChanged(); }),
           numField("Psi-era BRV floor for frontline roles", g.psiBrvFloor, (v) => { if (Number.isFinite(v)) { g.psiBrvFloor = v; app.settingsChanged(); } }),
           checkField("Training seat (lowest-composite healthy soldier rides along)", g.trainingSeat, (v) => { g.trainingSeat = v; app.settingsChanged(); }),

@@ -57,15 +57,21 @@
         rank: { kind: "none" }, // or { kind: "slot", slot: n } / { kind: "experience" }
       },
       /*
-       * Global behavior parameters. New tunables added while implementing:
-       * strCapacityFactor (capacity = STR x factor), psiBrvFloor (frontline
-       * BRV floor while the psi era is on), trainingSeatIndex (-1 = first
-       * seat). All editable in the Settings tab.
+       * Global behavior parameters. Carrying capacity follows the game's own
+       * gameconfig.xml: capacity(kg) = strCapacityBase + strCapacityCoef x STR.
+       * The TU penalty starts above encumbranceLimit x capacity (1.0 = only
+       * when over full capacity); STR *trains* at >= strTrainThreshold x
+       * capacity (0.8 in the game files), which is what strength_training
+       * roles invert to. Also: psiBrvFloor (frontline BRV floor while the psi
+       * era is on), trainingSeatIndex (-1 = first seat), includeRecruits.
+       * All editable in the Settings tab.
        */
       global: {
         woundedThreshold: 0.5, // HP fraction below which a soldier is ineligible
-        encumbranceLimit: 0.8, // kit must stay at/below this fraction of capacity
-        strCapacityFactor: 1.0, // carrying capacity = STR x this
+        encumbranceLimit: 1.0, // kit must stay at/below this fraction of capacity to avoid the TU penalty
+        strCapacityBase: 8, // kg; capacity = strCapacityBase + strCapacityCoef x STR
+        strCapacityCoef: 0.3, // kg per STR point (gameconfig.xml: 8kg + 0.3kg * strength)
+        strTrainThreshold: 0.8, // fraction of capacity at/above which moving trains STR (strength_training inverts to require this)
         psiEra: false, // late-game psi threats on
         psiBrvFloor: 50, // BRV floor for frontline roles while psiEra is on
         trainingSeat: false, // reserve one seat for the lowest-composite soldier

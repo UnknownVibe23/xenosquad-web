@@ -116,7 +116,7 @@
     settings.global.includeRecruits = true;
     const plan2 = XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax });
     t.ok(plan2.picks.filter((p) => p && p.soldier).length >= picked.length, "more soldiers available -> at least as many seats filled");
-    t.notOk(plan2.notices.some((n) => /recruitable/.test(n)));
+    t.notOk(plan2.notices.some((n) => /excluded from planning/.test(n)), "no exclusion notice when recruits are included");
   });
 
   test("assignment: scales to a large roster and squad — no hardcoded limits anywhere", (t) => {
@@ -147,6 +147,25 @@
     t.equal(plan2.picks.filter((p) => p && p.soldier).length, 15, "all 15 seats filled when everyone is eligible");
     // determinism at scale
     t.deepEqual(plan, XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax }));
+  });
+
+  test("assignment: recruit picks are flagged with a 'hire first' notice when recruits are included", (t) => {
+    const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });
+    const vet = mkSoldier("vet", { ACC: 40 });
+    vet.inTeam = true;
+    const rookie = mkSoldier("rookie", { ACC: 90 });
+    rookie.inTeam = false;
+    // included: the higher-ACC recruit wins the only seat and is identifiable
+    const settingsOn = settingsFor([role], ["r"], { woundedThreshold: 0, includeRecruits: true });
+    const plan = XS.scoring.planSquad([vet, rookie], settingsOn, { solver: XS.hungarian.hungarianMax });
+    t.equal(plan.picks[0].soldier.id, "rookie", "recruit wins the seat when included");
+    t.equal(plan.picks[0].soldier.inTeam, false, "pick carries inTeam so the UI can badge it");
+    t.ok(plan.notices.some((n) => /recruitable/.test(n) && /hire/i.test(n)), "notice says hire first");
+    // default: recruit excluded, team soldier takes the seat
+    const settingsOff = settingsFor([role], ["r"], { woundedThreshold: 0, includeRecruits: false });
+    const plan2 = XS.scoring.planSquad([vet, rookie], settingsOff, { solver: XS.hungarian.hungarianMax });
+    t.equal(plan2.picks[0].soldier.id, "vet");
+    t.notOk(plan2.notices.some((n) => /hire/i.test(n)));
   });
 
   test("assignment: rank tie-breaker decides exact ties through the pipeline", (t) => {

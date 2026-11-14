@@ -42,7 +42,15 @@
     t.equal(d.global.trainingSeat, false);
     t.equal(d.global.includeRecruits, false);
     t.equal(d.roles.length, 8);
-    t.equal(d.templates.length, 5);
+    t.equal(d.templates.length, 10, "5 default 8-seat templates + 5 six-plus-Hunter drafts");
+    const hunter = d.templates.filter((tp) => /-6h$/.test(tp.id));
+    t.equal(hunter.length, 5, "one 6+Hunter draft per mission template");
+    hunter.forEach((tp) => {
+      t.equal(tp.seats.length, 6, tp.id + " has exactly 6 seats (Hunter fills the other 2 of the Charlie's 8)");
+      t.ok(/Hunter/.test(tp.name), tp.id + " is annotated with Hunter in the name");
+      t.ok(/draft/i.test(tp.name), tp.id + " is marked as draft");
+      tp.seats.forEach((sid) => t.ok(d.roles.some((r) => r.id === sid), tp.id + " seat role exists: " + sid));
+    });
     t.equal(d.seats.length, 8, "seat builder defaults to 8 seats");
     t.ok(d.roles.every((r) => r.id && r.name && r.weights));
     // veteran-meta seeded doctrine (see README "Doctrine basis"); hard sourced
@@ -227,6 +235,34 @@
     t.ok(XS.settings.compareVersions("0.23.0", "0.23.0") === 0);
     t.ok(XS.settings.compareVersions("0.9.0", "0.10.0") < 0, "numeric, not lexicographic");
     t.ok(XS.settings.compareVersions(undefined, "0.23.0") < 0, "unknown version migrates (safe)");
+  });
+
+  test("settings: 0.29.0 migration APPENDS the new 6+Hunter templates without clobbering edits; same-version stays untouched", (t) => {
+    // simulate a 0.28.0-era storage blob: only the 5 old templates, one renamed by the user
+    const old5 = XS.domain.defaultTemplates().filter((tp) => !/-6h$/.test(tp.id));
+    old5[0].name = "My crash site";
+    const st = fakeStorage();
+    st.setItem("xenosquad-web.settings", JSON.stringify({
+      app: "xenosquad-web",
+      version: "0.28.0",
+      settings: { templates: old5 },
+    }));
+    const loaded = XS.settings.loadSettings(st);
+    t.equal(loaded.templates.length, 10, "5 old + 5 appended 6+Hunter drafts");
+    t.equal(loaded.templates[0].name, "My crash site", "user edit to an existing template survives");
+    t.ok(loaded.templates.some((tp) => tp.id === "crash-site-6h" && tp.seats.length === 6), "hunter draft appended");
+    // same-version storage: a deleted hunter draft must NOT come back
+    const st2 = fakeStorage();
+    const s = XS.settings.defaultSettings();
+    s.templates = s.templates.filter((tp) => tp.id !== "crash-site-6h");
+    XS.settings.saveSettings(st2, s); // writes version = APP_VERSION (0.29.0)
+    const loaded2 = XS.settings.loadSettings(st2);
+    t.equal(loaded2.templates.length, 9, "same-version: deleted template stays deleted (no re-append)");
+    t.notOk(loaded2.templates.some((tp) => tp.id === "crash-site-6h"));
+    // old export files get the append on import too
+    const imp = XS.settings.deserialize(JSON.stringify({ app: "xenosquad-web", version: "0.28.0", settings: { format: XS.settings.defaultSettings().format, templates: old5 } }));
+    t.ok(imp.ok);
+    t.equal(imp.settings.templates.length, 10, "old export: hunter drafts appended on import");
   });
 
   test("settings: VERSION_HISTORY is newest-first, unique, and starts at APP_VERSION", (t) => {

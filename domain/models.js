@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.28.0";
+  const APP_VERSION = "0.29.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.29.0", note: "New seeded mission templates: a 6-soldier + Hunter draft variant for each of the 5 default templates (the Hunter scout car fills 2 transport seats, so 6 + Hunter = a full CH-48 Charlie). Compositions researched from community meta per mission type (Hunter's gun/rockets replace the mg/rocketeer seat where useful, reapers cannot hurt it, it cannot enter tight UFO/base interiors, open maps favor the sniper). Existing installs get the new templates appended on upgrade without losing their custom ones." },
     { version: "0.28.0", note: "Save-reading hardening: current HP also falls back to the seat-anchored int when a soldier block has no known role string; the load-time sanity check additionally flags duplicate soldier names and a malformed header in-game date. README now lists the verified real-save sample matrix. All 4 real vanilla saves still parse with zero anomalies." },
     { version: "0.27.0", note: "Current HP located and verified on a new real save: the int32 stored 9 bytes before the role string (right after the transport-seat index) is the soldier's in-game current HP; in the latest save one soldier reads 35 of max 50 while everyone else reads full. The wounded check is ON by default again (threshold 0.75): the roster shows current/max HP and wound %, red rows are wounded, and recruits are never wounded. The sanity check now also flags a current HP above max HP. Calibration migrates on upgrade." },
     { version: "0.26.0", note: "Save reliability: on load the parser now sanity-checks the parsed values (header magic/version, stat ranges, rank points, role strings, team marker; thresholds in settings.format.sanity) and shows a prominent warning when a file is not a vanilla Xenonauts 1 save, so an X:CE/modded/corrupted save can no longer produce silently wrong numbers. Help and README document the supported saves (vanilla 1.06, X:CE with saveCompatibility gh15x) and recommend geoscape saves." },
@@ -228,6 +229,29 @@
    * Squad tab. No seeded template includes a medic seat — the community
    * distributes medkits across all soldiers; the medic role stays available
    * in the Roles tab and can be swapped into any template.
+   *
+   * The five "(6 + Hunter, draft)" variants are 6-seat versions for a squad
+   * with the Hunter scout car, which fills exactly 2 transport seats (the
+   * CH-48 Charlie carries 8 = 8 soldiers or 6 soldiers + 1 vehicle). DRAFT
+   * meta researched from community guides (GameFAQs dpelectric strategy
+   * guide, Arqade squad-composition thread, Steam/reddit loadout threads,
+   * Xenonauts wiki): the Hunter has +2 sight range, is immune to psi/panic,
+   * soaks reaction fire, and can HMG/rocket UFO doors itself; reapers cannot
+   * hurt it; it cannot fit into tight UFO/base interiors or upper floors and
+   * is weakest in clogged urban maps. So per mission the 2 dropped seats are:
+   * crash site: mg (Hunter's own gun covers suppression/door) + one breacher,
+   * keep the sniper for the open killing fields;
+   * UFO landing: mg + one breacher (Hunter busts the front door, two snipers
+   * cover the exits, one shield opens);
+   * terror site: rocketeer (Hunter with rockets/laser = the explosives, and
+   * reapers are useless against it) + one rifleman; shields weak vs reapers,
+   * so only one shield, but two assaults for the tight spaces;
+   * alien base: sniper (no long sightlines in corridors) + one rifleman;
+   * two shields + two assaults + mg for the close fight, Hunter overlooks
+   * the entrance;
+   * base defense: one breacher + one rifleman; aliens breach in, so fight in
+   * the base (1 shield, 2 assaults, 2 rifles, 1 mg) while the Hunter's MG
+   * seals a corner of the command area.
    */
   function defaultTemplates() {
     return [
@@ -236,6 +260,11 @@
       makeTemplate({ id: "terror-site", name: "Terror site", seats: ["breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg", "rocketeer"] }),
       makeTemplate({ id: "alien-base", name: "Alien base assault", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"] }),
       makeTemplate({ id: "base-defense", name: "Base defense", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "rifleman", "mg"] }),
+      makeTemplate({ id: "crash-site-6h", name: "Crash site (6 + Hunter, draft)", seats: ["breacher", "assault", "assault", "rifleman", "rifleman", "sniper"] }),
+      makeTemplate({ id: "ufo-landing-6h", name: "UFO landing (6 + Hunter, draft)", seats: ["breacher", "assault", "rifleman", "rifleman", "sniper", "sniper"] }),
+      makeTemplate({ id: "terror-site-6h", name: "Terror site (6 + Hunter, draft)", seats: ["breacher", "assault", "assault", "rifleman", "sniper", "mg"] }),
+      makeTemplate({ id: "alien-base-6h", name: "Alien base assault (6 + Hunter, draft)", seats: ["breacher", "breacher", "assault", "assault", "rifleman", "mg"] }),
+      makeTemplate({ id: "base-defense-6h", name: "Base defense (6 + Hunter, draft)", seats: ["breacher", "assault", "assault", "rifleman", "rifleman", "mg"] }),
     ];
   }
 

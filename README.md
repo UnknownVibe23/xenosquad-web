@@ -186,6 +186,17 @@ Xenonaut Stats). Hard sourced numbers used as floors:
 Known late-game variant **not** modeled (there is no per-era weight switch in settings, only the
 psi-era BRV floor): Heavy weapons would drop to STR 1 / TU 2.5 late-game.
 
+**6 + Hunter templates.** The Hunter scout car fills exactly 2 transport seats, so a full CH-48
+Charlie is either 8 soldiers or 6 soldiers + 1 Hunter (GameFAQs; Xenonauts wiki). Each seeded
+8-seat template has a "(6 + Hunter, draft)" 6-seat companion (researched community meta, marked
+draft because compositions are judgment calls): the Hunter's own MG/rockets replace the Heavy
+weapons or Rocketeer seat where that helps (crash site, UFO landing, terror site), it cannot
+fit into tight UFO/base interiors so it overlooks the entrance instead (alien base), it is
+immune to reapers' attacks (terror site), and on base defense its MG seals a corner while the
+soldiers hold the command area. The Hunter has +2 sight range and soaks reaction fire early,
+but is weakest in clogged urban maps and obsolete once soldiers wear Wolf/Buzzard armour. All
+templates are plain data in Settings; edit or delete freely.
+
 Everything remains plain data in the Roles tab/Settings - change anything live.
 
 ## Architecture

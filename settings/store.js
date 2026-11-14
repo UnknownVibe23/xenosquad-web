@@ -123,6 +123,7 @@
     "0.23.0": ["calibration"], // rank points located + promotion bonus added
     "0.25.0": ["calibration"], // wound check temporarily off (float thought to be HP)
     "0.27.0": ["calibration"], // current HP located (int before the role string); wound check on again
+    "0.29.0": ["templates:append"], // new seeded 6+Hunter draft templates: append the missing ones, keep user edits/deletions of existing templates
   };
 
   /* Semver-ish compare: -1 / 0 / 1. Missing or non-numeric parts count as 0. */
@@ -136,13 +137,26 @@
     return 0;
   }
 
-  /* Reset migrated sections of a merged settings object to the new defaults. */
+  /* Reset migrated sections of a merged settings object to the new defaults.
+   * A section named "<section>:append" (e.g. "templates:append") instead
+   * APPENDS the built-in defaults whose id is not already present, so new
+   * seeded entries reach upgrading users without clobbering their edits or
+   * intentionally deleted entries. */
   function applyMigrations(settings, fromVersion) {
     for (const v of Object.keys(MIGRATIONS)) {
       if (compareVersions(fromVersion, v) < 0 && compareVersions(v, XS.domain.APP_VERSION) <= 0) {
         for (const sec of MIGRATIONS[v]) {
-          const dflt = defaultSettings()[sec];
-          settings[sec] = dflt && typeof dflt === "object" ? JSON.parse(JSON.stringify(dflt)) : dflt;
+          if (sec.slice(-7) === ":append") {
+            const key = sec.slice(0, -7);
+            const dflt = defaultSettings()[key];
+            if (Array.isArray(dflt) && Array.isArray(settings[key])) {
+              const have = new Set(settings[key].map((x) => x && x.id));
+              for (const item of dflt) if (!have.has(item.id)) settings[key].push(JSON.parse(JSON.stringify(item)));
+            }
+          } else {
+            const dflt = defaultSettings()[sec];
+            settings[sec] = dflt && typeof dflt === "object" ? JSON.parse(JSON.stringify(dflt)) : dflt;
+          }
         }
       }
     }

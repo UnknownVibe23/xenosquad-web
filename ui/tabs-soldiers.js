@@ -31,6 +31,7 @@
 
     const head = h("tr", {}, [
       h("th", { text: "Name" }),
+      h("th", { text: "Team" }),
       h("th", { text: "Nationality" }),
       h("th", { text: "Game role" }),
       ...XS.domain.STATS.map((s) => h("th", { text: s })),
@@ -44,8 +45,10 @@
       const frac = XS.domain.hpFraction(s);
       const woundPct = frac == null ? "—" : Math.round(frac * 100) + "%";
       const wounded = frac != null && frac < (state.settings.global ? state.settings.global.woundedThreshold : 0.5);
-      return h("tr", { class: wounded ? "wounded" : "" }, [
+      const teamLabel = s.inTeam === false ? "recruit" : s.seat ? "team · " + s.seat : "team";
+      return h("tr", { class: (wounded ? "wounded" : "") + (s.inTeam === false ? " recruit" : "") }, [
         h("td", { text: s.name }),
+        h("td", { text: teamLabel, class: s.inTeam === false ? "recruit-badge" : "" }),
         h("td", { text: s.nationality }),
         h("td", { text: s.equipmentRole || "—" }),
         ...XS.domain.STATS.map((st) => h("td", { class: "num", text: statCell(s.stats[st]) })),

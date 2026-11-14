@@ -299,3 +299,14 @@ ul.bench li { font-size: 0.88rem; margin-bottom: 0.15rem; word-break: break-word
 .tpl-name { flex: 1 1 10rem; min-width: 8rem; font-weight: 600; }
 .tpl-seats { flex: 2 1 16rem; min-width: 10rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
 .tpl-seats.invalid { border-color: var(--danger); }
+
+/* team vs recruit badge */
+tr.recruit td { color: var(--muted); }
+.recruit-badge {
+  display: inline-block;
+  background: #3a3320;
+  color: #ffe9a8;
+  border-radius: 6px;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.75rem;
+}

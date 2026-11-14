@@ -17,14 +17,22 @@
  *     string, one small int (portrait index), then the length-prefixed marker
  *     itself.
  *   after the marker:   one byte, a short nationality string, then `statCount`
- *     int32 values (in the inspected save: TWELVE ints = six stats, each
- *     appearing twice, likely current then base), a run of zero padding with
- *     one float among it (~41 bytes after the stats; plausibly current HP),
- *     then anchored strings: "regiment.*", "experience.*", the in-game
- *     equipment role ("Rifleman", "Assault", ...), "armour.*", and loadout
- *     strings ("weapon.*", "ammo.*", "weapon.grenade.*").
+ *     int32 values (in the inspected saves: TWELVE ints = six stats, each
+ *     appearing twice — first copy current, second copy base), a run of zero
+ *     padding with one float among it (at stats-end + hpFloatOffset, i.e. 40
+ *     bytes in; it is the current HP as a float), then anchored strings:
+ *     "regiment.*", "experience.*", an optional transport-seat string
+ *     ("Charlie - 1/13"), the in-game equipment role ("Rifleman", ...),
+ *     "armour.*", and loadout strings ("weapon.*", "ammo.*",
+ *     "weapon.grenade.*"). Soldiers in the ACTIVE TEAM always carry a
+ *     "weapon.*" string; recruitment-pool soldiers have armour only — that
+ *     prefix is the teamStringPrefix format setting.
  *   header:             4-byte magic "onex", int32 version, then strings:
  *     save name, in-game date, real-world timestamp.
+ *
+ * STAT SLOT ORDER, verified against in-game roster screenshots: the six
+ * stats are stored as slot0=TU, slot1=HP, slot2=STR, slot3=ACC, slot4=RFL,
+ * slot5=BRV (NOT the TU/ACC/RFL/BRV/STR/HP order one might assume).
  *
  * WHY PURE
  * This module only touches the ArrayBuffer it is given. No DOM, no
@@ -42,8 +50,10 @@
   const DEFAULT_FORMAT = {
     marker: "SoldierFlags", // ASCII marker scanned for in the raw bytes
     statCount: 12, // int32 values read after the short-nationality string
-    floatScanBytes: 96, // window after the stats scanned for the HP float
+    floatScanBytes: 96, // fallback window scanned for a float if the offset read fails
+    hpFloatOffset: 40, // bytes after the stats where the current-HP float sits (4-aligned)
     stringScanBytes: 512, // window after the stats scanned for anchored strings
+    teamStringPrefix: "weapon.", // a block containing such a string = soldier is in the active team (recruits have armour only); "" disables the distinction
     roleNames: XS.domain ? XS.domain.EQUIPMENT_ROLES.slice() : [],
   };
 
@@ -213,14 +223,26 @@
       statInts.push(readInt32(view, off));
       off += 4;
     }
-    // one float among the zero padding (plausibly current HP)
+    /*
+     * The current-HP float sits at a fixed aligned offset after the stats
+     * (stats-end + hpFloatOffset; 40 bytes = ten zero ints in both inspected
+     * saves). Reading the configured offset directly avoids mis-picking
+     * stray floats elsewhere in the block; if that read is implausible we
+     * fall back to the first plausible float in the scan window.
+     */
     const rawFloats = [];
     const floatEnd = Math.min(bytes.length - 4, off + format.floatScanBytes);
     for (let k = 0; off + k <= floatEnd; k++) {
       const f = readFloat32(view, off + k);
       if (Number.isFinite(f) && f > 0.01 && f < 100000) rawFloats.push({ offset: off + k, value: f });
     }
-    const hpFloat = rawFloats.length > 0 ? rawFloats[0].value : null;
+    let hpFloat = null;
+    const offHp = off + (Number.isInteger(format.hpFloatOffset) ? format.hpFloatOffset : 40);
+    if (offHp + 4 <= bytes.length) {
+      const f = readFloat32(view, offHp);
+      if (Number.isFinite(f) && f > 0.01 && f < 100000) hpFloat = f;
+    }
+    if (hpFloat == null && rawFloats.length > 0) hpFloat = rawFloats[0].value;
 
     // --- anchored strings in the window up to the next marker
     const windowStart = off;
@@ -251,12 +273,23 @@
     }
     loadout.sort((a, b) => a.index - b.index);
     strings.loadout = loadout.map((r) => r.value);
-    // best-effort transport seat string, e.g. "Charlie - 1/13"
-    const seatMatch = windowText.match(/[A-Za-z0-9 ._'-]{2,40} - \d+\/\d+/);
+    // best-effort transport seat string, e.g. "Charlie - 1/13" — searched only
+    // in the first part of the window so post-block mission data cannot fake it
+    const seatRegion = windowText.substr(0, 256);
+    const seatMatch = seatRegion.match(/[A-Za-z][A-Za-z0-9 ._'-]{1,30} - \d+\/\d+/);
     if (seatMatch) {
       const r = tryReadAnchored(view, bytes, windowStart, windowText, seatMatch.index);
       if (r) strings.seat = r.value;
     }
+
+    /*
+     * Team membership: soldiers in the active team carry equipment, so their
+     * block contains a string with teamStringPrefix ("weapon.*" by default);
+     * recruitment-pool soldiers have armour only. An empty prefix disables
+     * the distinction (everyone counts as in-team).
+     */
+    const prefix = typeof format.teamStringPrefix === "string" ? format.teamStringPrefix : "";
+    const inTeam = prefix === "" ? true : collectAnchored(view, bytes, windowStart, windowText, prefix).length > 0;
 
     return {
       index,
@@ -270,6 +303,7 @@
       statInts,
       rawFloats,
       hpFloat,
+      inTeam,
       strings,
     };
   }
@@ -367,6 +401,8 @@
       stats,
       currentHP,
       rank,
+      inTeam: raw.inTeam !== false,
+      seat: raw.strings.seat || null,
       equipmentRole: raw.strings.role,
       regiment: raw.strings.regiment,
       experience: raw.strings.experience,

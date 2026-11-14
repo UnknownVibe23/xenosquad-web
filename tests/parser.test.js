@@ -129,39 +129,42 @@
     t.notOk(headerOnly.ok, "header-only slice has no marker");
   });
 
-  test("calibration: default mapping reads slots 0..5 as TU..HP of the first copy", (t) => {
+  // Verified against in-game roster screenshots: the save stores the six
+  // stats as slot0=TU, slot1=HP, slot2=STR, slot3=ACC, slot4=RFL, slot5=BRV.
+  test("calibration: default mapping matches the verified save order (TU,HP,STR,ACC,RFL,BRV)", (t) => {
     const { bytes, spec } = fixture(31, 6);
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     t.ok(res.ok);
+    t.deepEqual(settings.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
     res.soldiers.forEach((s, i) => {
       const ints = spec.soldiers[i].statInts;
       t.equal(s.stats.TU, ints[0]);
-      t.equal(s.stats.ACC, ints[1]);
-      t.equal(s.stats.RFL, ints[2]);
-      t.equal(s.stats.BRV, ints[3]);
-      t.equal(s.stats.STR, ints[4]);
-      t.equal(s.stats.HP, ints[5]);
-      t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "currentHP from float");
+      t.equal(s.stats.HP, ints[1]);
+      t.equal(s.stats.STR, ints[2]);
+      t.equal(s.stats.ACC, ints[3]);
+      t.equal(s.stats.RFL, ints[4]);
+      t.equal(s.stats.BRV, ints[5]);
+      t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "currentHP from the float");
     });
   });
 
   test("calibration: switching to the second copy (base) changes the stats", (t) => {
     const { bytes, spec } = fixture(33, 4);
     const settings = XS.settings.defaultSettings();
-    settings.calibration.statSlots = { TU: 6, ACC: 7, RFL: 8, BRV: 9, STR: 10, HP: 11 };
+    settings.calibration.statSlots = { TU: 6, HP: 7, STR: 8, ACC: 9, RFL: 10, BRV: 11 };
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     const ints = spec.soldiers[1].statInts;
     t.equal(res.soldiers[1].stats.TU, ints[6], "TU now comes from slot 6 (base copy)");
-    t.equal(res.soldiers[1].stats.HP, ints[11]);
+    t.equal(res.soldiers[1].stats.HP, ints[7]);
   });
 
   test("calibration: current HP can come from a slot instead of the float", (t) => {
     const { bytes, spec } = fixture(35, 4);
     const settings = XS.settings.defaultSettings();
-    settings.calibration.currentHP = { kind: "slot", slot: 5 };
+    settings.calibration.currentHP = { kind: "slot", slot: 1 };
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    t.equal(res.soldiers[0].currentHP, spec.soldiers[0].statInts[5], "currentHP from HP slot");
+    t.equal(res.soldiers[0].currentHP, spec.soldiers[0].statInts[1], "currentHP from HP slot (slot 1)");
   });
 
   test("calibration: hpFraction and rank degrade gracefully when not locatable", (t) => {
@@ -186,9 +189,40 @@
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     res.soldiers.forEach((s, i) => {
-      const expected = spec.soldiers[i].hpFloat / spec.soldiers[i].statInts[5];
+      const expected = spec.soldiers[i].hpFloat / spec.soldiers[i].statInts[1]; // HP is slot 1
       t.approx(XS.domain.hpFraction(s), expected, 1e-6);
       t.equal(s.equipmentRole, spec.soldiers[i].role);
     });
+  });
+
+  test("parser: current-HP float is read at the configured offset (stats-end + hpFloatOffset)", (t) => {
+    const { bytes, spec } = fixture(43, 5);
+    const res = XS.parser.parseSave(bufferOf(bytes), { hpFloatOffset: 40 });
+    res.soldiers.forEach((s, i) => t.approx(s.hpFloat, spec.soldiers[i].hpFloat, 1e-4, "hpFloat soldier " + i));
+    // a wrong offset falls back to the scan window and still finds the float
+    const res2 = XS.parser.parseSave(bufferOf(bytes), { hpFloatOffset: 8 });
+    t.approx(res2.soldiers[0].hpFloat, spec.soldiers[0].hpFloat, 1e-4, "fallback scan finds the float");
+  });
+
+  test("parser: team membership — weapon.* presence marks active team, recruits have armour only", (t) => {
+    const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 44, soldiers: 9, recruitEvery: 3 });
+    const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), XS.settings.defaultSettings());
+    t.equal(res.soldiers.length, 9);
+    res.soldiers.forEach((s, i) => {
+      t.equal(s.inTeam, spec.soldiers[i].inTeam, "inTeam of soldier " + i);
+      t.equal(s.inTeam, s.loadout.length > 0, "in-team <=> has weapon/ammo loadout");
+    });
+    t.equal(res.soldiers.filter((s) => s.inTeam).length, 6);
+    t.equal(res.soldiers.filter((s) => !s.inTeam).length, 3);
+  });
+
+  test("parser: teamStringPrefix is a setting — empty prefix disables the distinction", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 45, soldiers: 6, recruitEvery: 2 });
+    const res = XS.parser.parseSave(bufferOf(bytes), { teamStringPrefix: "" });
+    t.ok(res.soldiers.every((s) => s.inTeam), "empty prefix -> everyone in team");
+    const res2 = XS.parser.parseSave(bufferOf(bytes), { teamStringPrefix: "armour." });
+    t.ok(res2.soldiers.every((s) => s.inTeam), "armour. prefix -> everyone has armour -> all in team");
+    const res3 = XS.parser.parseSave(bufferOf(bytes), { teamStringPrefix: "weapon." });
+    t.equal(res3.soldiers.filter((s) => s.inTeam).length, 3, "weapon. prefix -> only equipped soldiers");
   });
 })(typeof self !== "undefined" ? self : globalThis);

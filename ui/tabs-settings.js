@@ -68,6 +68,7 @@
           numField("Psi-era BRV floor for frontline roles", g.psiBrvFloor, (v) => { if (Number.isFinite(v)) { g.psiBrvFloor = v; app.settingsChanged(); } }),
           checkField("Training seat (lowest-composite healthy soldier rides along)", g.trainingSeat, (v) => { g.trainingSeat = v; app.settingsChanged(); }),
           numField("Training seat index (-1 = first seat)", g.trainingSeatIndex, (v) => { if (Number.isFinite(v)) { g.trainingSeatIndex = Math.trunc(v); app.settingsChanged(); } }),
+          checkField("Include recruitable soldiers in planning (default: active team only)", !!g.includeRecruits, (v) => { g.includeRecruits = v; app.settingsChanged(); }),
         ]),
         h("p", {}, [h("button", { type: "button", text: "Reset global to defaults", on: { click: () => { XS.settings.resetSection(s, "global"); app.settingsChanged(); } } })]),
       ])
@@ -84,8 +85,18 @@
             h("input", { type: "text", value: f.marker, on: { change: (e) => { f.marker = e.target.value || "SoldierFlags"; app.settingsChanged(); } } }),
           ]),
           numField("Expected stat count (ints per soldier block)", f.statCount, (v) => { if (Number.isInteger(v) && v >= 0 && v <= 64) { f.statCount = v; app.settingsChanged(); } }),
-          numField("Float scan window (bytes after stats)", f.floatScanBytes, (v) => { if (Number.isFinite(v) && v >= 0) { f.floatScanBytes = Math.trunc(v); app.settingsChanged(); } }),
+          numField("Current-HP float offset (bytes after the stats)", f.hpFloatOffset, (v) => { if (Number.isInteger(v) && v >= 0 && v <= 4096) { f.hpFloatOffset = v; app.settingsChanged(); } }),
+          numField("Float scan window (bytes after stats, fallback)", f.floatScanBytes, (v) => { if (Number.isFinite(v) && v >= 0) { f.floatScanBytes = Math.trunc(v); app.settingsChanged(); } }),
           numField("String scan window (bytes after stats)", f.stringScanBytes, (v) => { if (Number.isFinite(v) && v >= 0) { f.stringScanBytes = Math.trunc(v); app.settingsChanged(); } }),
+          h("label", { class: "set-row" }, [
+            h("span", { text: "Team string prefix (block containing it = active team; empty = no distinction)" }),
+            h("input", {
+              type: "text",
+              value: f.teamStringPrefix,
+              placeholder: "weapon.",
+              on: { change: (e) => { f.teamStringPrefix = e.target.value; app.settingsChanged(); } },
+            }),
+          ]),
           h("label", { class: "set-row" }, [
             h("span", { text: "Equipment role names (comma-separated)" }),
             h("input", {

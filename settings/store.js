@@ -39,18 +39,20 @@
         marker: "SoldierFlags",
         statCount: 12,
         floatScanBytes: 96,
+        hpFloatOffset: 40, // bytes after the stats where the current-HP float sits
         stringScanBytes: 512,
+        teamStringPrefix: "weapon.", // block containing such a string = active team (recruits have armour only)
         roleNames: XS.domain.EQUIPMENT_ROLES.slice(),
       },
       /*
        * Calibration: which raw slot of a soldier block is which stat.
-       * Default hypothesis (verified against the sample save's layout, but
-       * adjustable in the Calibrate tab): slots 0..5 are TU, ACC, RFL, BRV,
-       * STR, HP of the first copy; the padding float is current HP; rank is
-       * not locatable and stays disabled.
+       * VERIFIED against in-game roster screenshots: slots 0..5 of the first
+       * (current) copy are TU, HP, STR, ACC, RFL, BRV — note the save stores
+       * HP in slot 1, not slot 5. The padding float is current HP. Rank is
+       * still not locatable and stays disabled. All adjustable in Calibrate.
        */
       calibration: {
-        statSlots: { TU: 0, ACC: 1, RFL: 2, BRV: 3, STR: 4, HP: 5 },
+        statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 },
         currentHP: { kind: "float" }, // or { kind: "slot", slot: n }
         rank: { kind: "none" }, // or { kind: "slot", slot: n } / { kind: "experience" }
       },
@@ -68,6 +70,7 @@
         psiBrvFloor: 50, // BRV floor for frontline roles while psiEra is on
         trainingSeat: false, // reserve one seat for the lowest-composite soldier
         trainingSeatIndex: -1, // which seat (-1 = first seat)
+        includeRecruits: false, // false = plan only with active-team soldiers; recruits stay listed but benched out
       },
       roles: XS.domain.defaultRoles(),
       /* The seat builder: a role id per seat. Defaults to 8 seats. */
@@ -112,6 +115,8 @@
     else {
       if (typeof obj.format.marker !== "string" || obj.format.marker.length === 0) errors.push("format.marker must be a non-empty string");
       if (!Number.isInteger(obj.format.statCount) || obj.format.statCount < 0 || obj.format.statCount > 64) errors.push("format.statCount must be an integer in 0..64");
+      if (!Number.isInteger(obj.format.hpFloatOffset) || obj.format.hpFloatOffset < 0 || obj.format.hpFloatOffset > 4096) errors.push("format.hpFloatOffset must be an integer in 0..4096");
+      if (typeof obj.format.teamStringPrefix !== "string") errors.push("format.teamStringPrefix must be a string");
     }
     if (obj.calibration !== undefined) {
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");

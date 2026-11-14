@@ -46,17 +46,25 @@ No build step is needed: the deployed site is exactly the files in this repo.
    **Roles** is your doctrine editor; **Settings** holds global parameters, export/import and
    reset; **Calibrate** maps raw save slots to the six stats; **Help** documents everything.
 
-## Save format notes (verified against a real `planner.sav`)
+## Save format notes (verified against real `planner.sav` files + in-game screenshots)
 
 Binary serialization: 4-byte LE length + ASCII bytes for strings, 4-byte LE int32, 4-byte
 LE IEEE-754 float; `FF FF FF FF` is -1/null. Soldier records are located by scanning for the
-ASCII marker `SoldierFlags` (once per soldier). A record contains the nationality, full name,
-portrait string + int, the marker, a short nationality string, then **twelve** int32 stat
-values (six stats, each appearing twice — current and base), a zero-padding run containing
-one float (observed ~41 bytes after the stats; plausibly current HP against the 6th stat as
-max HP — confirm in the **Calibrate** tab), then `regiment.*`, `experience.*`, the in-game
-equipment role string, `armour.*` and loadout strings. The header stores the save name and
-in-game date. All offsets/counts are settings, never hardcoded.
+ASCII marker `SoldierFlags` (once per soldier — active team **and** recruitment pool alike). A record
+contains the nationality, full name, portrait string + int, the marker, a short nationality string,
+then **twelve** int32 stat values (six stats, each appearing twice — first copy current, second base),
+a zero-padding run containing one float at **stats-end + 40 bytes** (the current HP as a float; the
+HP stat itself is the max), then `regiment.*`, `experience.*`, an optional transport-seat string
+(`Charlie - 1/13`), the in-game equipment role string, `armour.*` and loadout strings.
+
+**Stat slot order, verified against roster screenshots: slot0=TU, slot1=HP, slot2=STR, slot3=ACC,
+slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 — the save data overrides the assumed order; the
+Calibrate tab can remap everything). **Team membership**: a block containing a `weapon.*` string is
+an active-team soldier; recruitment-pool soldiers have armour only (in the inspected saves this
+splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). Rank is not
+cleanly locatable in the block, so the rank tie-breaker stays disabled with a visible notice unless
+mapped in Calibrate. The header stores the save name and in-game date. All offsets/counts/prefixes
+are settings, never hardcoded.
 
 ## Testing
 
@@ -92,8 +100,8 @@ wrapper (classic `<script>` in the browser → works from `file://`; `module.exp
 
 | Tab | What it does |
 | --- | --- |
-| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live |
-| Soldiers | parsed roster: stats, HP/wound status, game role, rank, loadout |
+| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live; recruits excluded by default with a notice |
+| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP/wound status, game role, rank, loadout |
 | Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
 | Settings | global parameters (wounded threshold, encumbrance, psi era, training seat), save-format parameters, export/import JSON, per-section resets, reset all, **Clear all my data** |
 | Calibrate | raw save slots → the six stats, current-HP and rank sources; per-soldier raw value table |

@@ -34,6 +34,8 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
+        h("h2", { text: "Team vs recruitable soldiers" }),
+        h("p", { text: "The save contains both your active team and the recruitment pool. A soldier block that contains a \"weapon.*\" string is in your active team (recruits carry armour only) — the prefix is the teamStringPrefix setting under Settings → Save format. The Soldiers tab badges each soldier as team (with transport seat, e.g. \"Charlie - 1/13\") or recruit. By default squads are planned from the active team only; tick \"include recruitable soldiers\" in Settings to let recruits compete for seats." }),
         h("h2", { text: "Calibration flow (first run)" }),
         h("p", { text: "The save's soldier block holds raw values whose meaning is only known after calibration — nothing is hardcoded. The Calibrate tab shows every soldier next to its raw ints and the padding float, with dropdowns assigning each of the six stats (TU, ACC, RFL, BRV, STR, HP) to a raw slot, plus sources for current HP and rank. The default mapping (slots 0..5 = TU..HP of the first copy; the float = current HP) matches the inspected sample save; adjust it there if your game version differs, and the roster re-parses live. If a field cannot be located (e.g. rank), the dependent feature is disabled with a visible notice instead of inventing values." }),
       ])

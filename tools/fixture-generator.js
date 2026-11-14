@@ -80,14 +80,18 @@
   const GRENADES = ["weapon.grenade.frag", "weapon.grenade.smoke", "weapon.grenade.flashbang", "weapon.grenade.medipack"];
 
   /*
-   * Build a synthetic save. Options: { seed, soldiers, saveName, gameDate }.
-   * Returns { bytes: Uint8Array, spec: { header, soldiers: [...] } } — `spec`
-   * exposes exactly what was written so tests can assert against it.
+   * Build a synthetic save. Options: { seed, soldiers, saveName, gameDate,
+   * recruitEvery } — with recruitEvery = N, every N-th soldier is a RECRUIT
+   * (armour only, no weapon.* strings, no seat), mimicking the recruitment
+   * pool; everyone else is active team with a loadout. Returns
+   * { bytes, spec } — `spec` exposes exactly what was written (incl. inTeam)
+   * so tests can assert against it.
    */
   function buildFixtureSave(options) {
     const opts = options || {};
     const seed = opts.seed == null ? 1 : opts.seed;
     const count = opts.soldiers == null ? 10 : opts.soldiers;
+    const recruitEvery = opts.recruitEvery == null ? 0 : opts.recruitEvery;
     const saveName = opts.saveName || "planner-test";
     const gameDate = opts.gameDate || "00:00 01 Sep 1979";
     const rnd = mulberry32(seed);
@@ -124,6 +128,7 @@
       const ammo = AMMOS[i % AMMOS.length];
       const grenade = GRENADES[i % GRENADES.length];
       const seat = i % 3 === 0 ? "Charlie - " + n + "/13" : null;
+      const isRecruit = recruitEvery > 0 && n % recruitEvery === 0;
 
       // junk between soldiers (never contains the marker: 12 fixed ASCII
       // bytes have a negligible chance of matching by accident, and the
@@ -141,13 +146,13 @@
       w.u8(0); // flag byte
       w.str(shortNat);
       for (const v of statInts) w.i32(v);
-      for (let k = 0; k < 41; k++) w.u8(0); // zero padding run
+      for (let k = 0; k < 40; k++) w.u8(0); // zero padding run (float lands at stats-end + 40, 4-aligned)
       w.f32(hpFloat); // the one float among the padding (current HP)
       w.str(regiment);
       w.str(experience);
       w.i32(0);
       w.i32(-1); // FF FF FF FF
-      if (seat) w.str(seat); else w.str("None");
+      if (seat && !isRecruit) w.str(seat); else w.str("None");
       w.i32(3);
       w.i32(56);
       w.u8(1);
@@ -160,16 +165,24 @@
       w.str("DeadSoldier.UnknownLoc");
       w.str("armour.basic");
       w.str("armour.basic");
-      w.str(weapon);
-      w.str("Inventory.SaveAmmoType");
-      w.u8(0);
-      w.str(ammo);
-      w.str(weapon);
-      w.i32(1);
-      w.u8(0);
-      w.str(grenade);
+      if (!isRecruit) {
+        // active-team soldiers carry equipment; recruits have armour only
+        w.str(weapon);
+        w.str("Inventory.SaveAmmoType");
+        w.u8(0);
+        w.str(ammo);
+        w.str(weapon);
+        w.i32(1);
+        w.u8(0);
+        w.str(grenade);
+      }
 
-      spec.soldiers.push({ name, nationality, portrait, portraitIndex, statInts, hpFloat, role, regiment, experience, loadout: [weapon, ammo, weapon, grenade], seat });
+      spec.soldiers.push({
+        name, nationality, portrait, portraitIndex, statInts, hpFloat, role, regiment, experience,
+        loadout: isRecruit ? [] : [weapon, ammo, weapon, grenade],
+        seat: isRecruit ? null : seat,
+        inTeam: !isRecruit,
+      });
     }
 
     // trailing junk

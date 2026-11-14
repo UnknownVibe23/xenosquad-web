@@ -26,7 +26,7 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.5.0";
+  const APP_VERSION = "0.6.0";
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */
@@ -94,6 +94,10 @@
       stats: Object.assign({ TU: null, ACC: null, RFL: null, BRV: null, STR: null, HP: null }, init.stats || {}),
       currentHP: typeof init.currentHP === "number" ? init.currentHP : null,
       rank: typeof init.rank === "number" ? init.rank : 0,
+      /* inTeam: false for soldiers that are only in the recruitment pool
+       * (detected via the teamStringPrefix format setting, e.g. "weapon.*"). */
+      inTeam: init.inTeam !== undefined ? !!init.inTeam : true,
+      seat: init.seat || null, // transport seat string, e.g. "Charlie - 1/13"
       equipmentRole: init.equipmentRole || null,
       regiment: init.regiment || null,
       experience: init.experience || null,

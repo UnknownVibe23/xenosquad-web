@@ -99,6 +99,26 @@
     t.deepEqual(r1, r2);
   });
 
+  test("assignment: recruitable soldiers are excluded from planning by default", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 606, soldiers: 12, recruitEvery: 3 }); // 4 recruits, 8 team
+    const settings = XS.settings.defaultSettings();
+    settings.global.woundedThreshold = 0;
+    settings.global.includeRecruits = false;
+    const res = XS.parser.parseSaveWithSettings(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), settings);
+    t.equal(res.soldiers.filter((s) => s.inTeam).length, 8);
+    t.equal(res.soldiers.filter((s) => !s.inTeam).length, 4);
+    const plan = XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax });
+    const picked = plan.picks.filter((p) => p && p.soldier);
+    t.ok(picked.length > 0);
+    t.ok(picked.every((p) => p.soldier.inTeam), "no recruit is ever fielded by default");
+    t.ok(plan.notices.some((n) => /recruitable/.test(n)), "notice explains the exclusion");
+    // with the toggle on, recruits compete for seats
+    settings.global.includeRecruits = true;
+    const plan2 = XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax });
+    t.ok(plan2.picks.filter((p) => p && p.soldier).length >= picked.length, "more soldiers available -> at least as many seats filled");
+    t.notOk(plan2.notices.some((n) => /recruitable/.test(n)));
+  });
+
   test("assignment: rank tie-breaker decides exact ties through the pipeline", (t) => {
     // identical stats, different rank: the higher rank gets the single seat
     const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });

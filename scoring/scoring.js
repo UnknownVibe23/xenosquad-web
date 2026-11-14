@@ -256,7 +256,20 @@
     for (const r of settings.roles || []) rolesById[r.id] = r;
     const notices = [];
 
-    const eligibility = computeEligibility(soldiers, settings);
+    /*
+     * Team membership filter: recruitment-pool soldiers (inTeam === false,
+     * detected via the teamStringPrefix format setting) are excluded from
+     * planning unless the global "include recruitable soldiers" setting is on.
+     * They are still shown in the Soldiers tab — just not fielded.
+     */
+    const includeRecruits = !!(settings.global && settings.global.includeRecruits);
+    const planningRoster = includeRecruits ? soldiers : soldiers.filter((s) => s.inTeam !== false);
+    const recruitCount = soldiers.length - planningRoster.length;
+    if (recruitCount > 0) {
+      notices.push(recruitCount + " recruitable soldier(s) are not in the active team and were excluded from planning (Settings → include recruitable soldiers to change this).");
+    }
+
+    const eligibility = computeEligibility(planningRoster, settings);
     const eligible = eligibility.filter((e) => e.eligible).map((e) => e.soldier);
     const ineligible = eligibility.filter((e) => !e.eligible);
 

@@ -27,12 +27,14 @@
     const d = XS.settings.defaultSettings();
     t.equal(d.format.marker, "SoldierFlags");
     t.equal(d.format.statCount, 12);
-    t.equal(d.calibration.statSlots.TU, 0);
-    t.equal(d.calibration.statSlots.HP, 5);
+    t.equal(d.format.hpFloatOffset, 40);
+    t.equal(d.format.teamStringPrefix, "weapon.");
+    t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
     t.equal(d.global.woundedThreshold, 0.5);
     t.equal(d.global.encumbranceLimit, 0.8);
     t.equal(d.global.psiEra, false);
     t.equal(d.global.trainingSeat, false);
+    t.equal(d.global.includeRecruits, false);
     t.equal(d.roles.length, 8);
     t.equal(d.templates.length, 5);
     t.equal(d.seats.length, 8, "seat builder defaults to 8 seats");

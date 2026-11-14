@@ -54,6 +54,25 @@
         currentHP: { kind: "float" }, // or { kind: "slot", slot: n }
         rank: { kind: "none" }, // or { kind: "slot", slot: n } / { kind: "experience" }
       },
+      /*
+       * Global behavior parameters. New tunables added while implementing:
+       * strCapacityFactor (capacity = STR x factor), psiBrvFloor (frontline
+       * BRV floor while the psi era is on), trainingSeatIndex (-1 = first
+       * seat). All editable in the Settings tab.
+       */
+      global: {
+        woundedThreshold: 0.5, // HP fraction below which a soldier is ineligible
+        encumbranceLimit: 0.8, // kit must stay at/below this fraction of capacity
+        strCapacityFactor: 1.0, // carrying capacity = STR x this
+        psiEra: false, // late-game psi threats on
+        psiBrvFloor: 50, // BRV floor for frontline roles while psiEra is on
+        trainingSeat: false, // reserve one seat for the lowest-composite soldier
+        trainingSeatIndex: -1, // which seat (-1 = first seat)
+      },
+      roles: XS.domain.defaultRoles(),
+      /* The seat builder: a role id per seat. Defaults to 8 seats. */
+      seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"],
+      templates: [],
     };
   }
 
@@ -87,6 +106,10 @@
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");
       else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
     }
+    if (obj.global !== undefined && !isPlainObject(obj.global)) errors.push("global must be an object");
+    if (obj.roles !== undefined && !Array.isArray(obj.roles)) errors.push("roles must be an array");
+    if (obj.seats !== undefined && !Array.isArray(obj.seats)) errors.push("seats must be an array");
+    if (obj.templates !== undefined && !Array.isArray(obj.templates)) errors.push("templates must be an array");
     return errors;
   }
 

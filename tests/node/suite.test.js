@@ -20,8 +20,11 @@ globalThis.XSTest.bindNode(test);
 // logic modules under test (side effect: attach to globalThis.XS)
 require("../../domain/models.js");
 require("../../parser/saveParser.js");
+require("../../scoring/hungarian.js");
+require("../../scoring/scoring.js");
 require("../../settings/store.js");
 require("../../tools/fixture-generator.js");
 
 // the same test files the browser page loads
 require("../parser.test.js");
+require("../scoring.test.js");

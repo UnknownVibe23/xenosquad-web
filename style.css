@@ -235,3 +235,30 @@ td.mapped { background: #2b4a6355; font-weight: 600; }
 .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
 .cal-row { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
 .cal-row select { width: 100%; }
+
+/* squad seat builder + result */
+.seat-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; }
+.seat-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.seat-row .seat-num { min-width: 4.5rem; color: var(--muted); font-size: 0.9rem; }
+.seat-row select { flex: 1 1 12rem; min-width: 0; }
+
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 0.6rem; }
+.pick {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  min-width: 0;
+}
+.pick.training { border-color: var(--accent-2); }
+.pick.empty { color: var(--muted); font-style: italic; }
+.pick-head { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.pick-role { font-weight: 600; color: var(--accent); }
+.pick-name { font-weight: 600; }
+.pick-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+.pick-why { font-size: 0.82rem; margin-top: 0.3rem; color: var(--accent-2); }
+.pick-stats { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; font-variant-numeric: tabular-nums; }
+
+ul.bench { margin: 0.3rem 0 0; padding-left: 1.2rem; columns: 2; }
+ul.bench li { font-size: 0.88rem; margin-bottom: 0.15rem; word-break: break-word; }
+@media (max-width: 700px) { ul.bench { columns: 1; } }

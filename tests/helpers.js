@@ -71,6 +71,9 @@
       equal(a, b, msg) {
         if (a !== b) fail((msg ? msg + ": " : "") + "expected " + fmt(b) + " but got " + fmt(a));
       },
+      notEqual(a, b, msg) {
+        if (a === b) fail((msg ? msg + ": " : "") + "expected values to differ, both were " + fmt(a));
+      },
       deepEqual(a, b, msg) {
         if (!deepEq(a, b)) fail((msg ? msg + ": " : "") + "deepEqual failed\n  actual:   " + fmt(a) + "\n  expected: " + fmt(b));
       },

@@ -26,7 +26,7 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.13.0";
+  const APP_VERSION = "0.14.0";
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */
@@ -119,6 +119,13 @@
    * anyone at 70+, so the hard floor stays a sanity bar (55); the STR 3 / ACC 3
    * weights make the optimizer pick the best min(STR,ACC) soldier anyway.
    *
+   * Role display names are the OFFICIAL in-game loadout class names players
+   * see in the game (the save's own role strings: Rifleman, Assault, Sniper,
+   * Scout, Shield, Heavy weapons, Rocketeer, Specialist). Our doctrine roles
+   * map onto them: breacher -> Shield (shield carrier does the doors), mg ->
+   * Heavy weapons, medic -> Specialist (the specialist carries the extra
+   * medkits/ammo/grenades). Ids stay stable so saved seats/templates keep
+   * working.
    * weights: stat -> weight; floors: minimum raw stats; kitWeight: equipment
    * weight in kg for the encumbrance check; trains: stats the seat trains
    * (tie-breaker); frontline: subject to the BRV floor in the psi era;
@@ -129,11 +136,11 @@
       makeRole({ id: "rifleman", name: "Rifleman", weights: { ACC: 3, RFL: 2, TU: 2, BRV: 1 }, floors: {}, kitWeight: 8, trains: ["ACC", "RFL"], frontline: true }),
       makeRole({ id: "scout", name: "Scout", weights: { TU: 3, HP: 3, RFL: 2 }, floors: { TU: 55, HP: 50 }, kitWeight: 6, trains: ["TU", "HP"], frontline: true }),
       makeRole({ id: "sniper", name: "Sniper", weights: { ACC: 4, RFL: 2, TU: 2, BRV: 1.5 }, floors: { ACC: 55 }, kitWeight: 9, trains: ["ACC", "RFL"], frontline: false }),
-      makeRole({ id: "mg", name: "MG", weights: { STR: 3, ACC: 3, TU: 1.5 }, floors: { STR: 55 }, kitWeight: 16, trains: ["STR", "ACC"], frontline: false }),
-      makeRole({ id: "breacher", name: "Breacher", weights: { RFL: 3, HP: 3, TU: 2, STR: 2 }, floors: { HP: 55, RFL: 50 }, kitWeight: 18, trains: ["RFL", "HP"], frontline: true }),
+      makeRole({ id: "mg", name: "Heavy weapons", weights: { STR: 3, ACC: 3, TU: 1.5 }, floors: { STR: 55 }, kitWeight: 16, trains: ["STR", "ACC"], frontline: false }),
+      makeRole({ id: "breacher", name: "Shield", weights: { RFL: 3, HP: 3, TU: 2, STR: 2 }, floors: { HP: 55, RFL: 50 }, kitWeight: 18, trains: ["RFL", "HP"], frontline: true }),
       makeRole({ id: "assault", name: "Assault", weights: { RFL: 3, TU: 2.5, ACC: 1.5, HP: 2 }, floors: { TU: 55 }, kitWeight: 10, trains: ["TU", "RFL"], frontline: true }),
       makeRole({ id: "rocketeer", name: "Rocketeer", weights: { STR: 3, ACC: 3, BRV: 1.5 }, floors: { STR: 55, ACC: 55, BRV: 50 }, kitWeight: 15, trains: ["STR", "BRV"], frontline: false }),
-      makeRole({ id: "medic", name: "Medic", weights: { BRV: 2, TU: 2, STR: 1 }, floors: {}, kitWeight: 9, trains: ["BRV", "TU"], frontline: false }),
+      makeRole({ id: "medic", name: "Specialist", weights: { BRV: 2, TU: 2, STR: 1 }, floors: {}, kitWeight: 9, trains: ["BRV", "TU"], frontline: false }),
     ];
   }
 

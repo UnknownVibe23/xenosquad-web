@@ -368,3 +368,35 @@ td.wounded, tr.wounded td .num { color: var(--danger); }
 /* settings: grouped global behavior */
 .set-group { margin-top: 0.8rem; }
 .set-group h3 { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* friendlier header */
+.app-title {
+  margin: 0.2rem 0 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  color: var(--accent);
+}
+.app-sub { margin: 0.1rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; }
+
+/* template editor: per-role +/- counters */
+.tpl-card { flex-direction: column; align-items: stretch; }
+.tpl-counters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.3rem 0.8rem; margin: 0.4rem 0; }
+.tpl-count { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; }
+.tpl-role-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl-num { min-width: 1.6rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0.2rem; }
+.count-btn { width: 1.9rem; padding: 0.15rem 0; font-size: 1rem; line-height: 1; border-radius: 6px; }
+.count-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* seat builder: quick-add buttons + seat chips */
+.quick-add-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.quick-add { border-color: var(--accent); color: var(--accent); background: #2b4a6333; font-weight: 600; }
+.seat-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.6rem; }
+.seat-chip {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: var(--panel-alt); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0.25rem 0.35rem 0.25rem 0.7rem;
+}
+.seat-num { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
+.seat-role { max-width: 9.5rem; border-radius: 999px; }
+.chip-x { border-radius: 999px; width: 1.7rem; height: 1.7rem; padding: 0; line-height: 1; color: var(--danger); border-color: var(--danger); }

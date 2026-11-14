@@ -49,6 +49,9 @@
     t.deepEqual(byId.assault.weights, { RFL: 3, TU: 2.5, ACC: 1.5, HP: 2 });
     t.deepEqual(byId.sniper.weights, { ACC: 4, RFL: 2, TU: 2, BRV: 1.5 });
     t.deepEqual(byId.rocketeer.floors, { STR: 55, ACC: 55, BRV: 50 });
+    // role display names must be the official in-game loadout class names
+    t.ok(d.roles.every((r) => d.roles.length && XS.domain.EQUIPMENT_ROLES.indexOf(r.name) !== -1),
+      "every seeded role name is an official in-game class: " + d.roles.map((r) => r.name).join(", "));
   });
 
   test("settings: deepMerge fills missing keys from defaults, keeps saved values", (t) => {

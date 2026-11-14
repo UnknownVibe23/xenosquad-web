@@ -73,11 +73,16 @@
    * dropdown applies one to the seat builder; the editor below it can add,
    * duplicate, rename, edit and delete templates.
    */
+  /*
+   * Mission templates: named seat compositions stored in settings. The
+   * dropdown applies one to the seat builder; the editor uses per-role
+   * +/- counter buttons (no free-text seat fields) plus add/duplicate/
+   * rename/delete.
+   */
   function renderTemplates(main, state) {
     const app = XS.app;
     const templates = state.settings.templates;
     const roles = state.settings.roles || [];
-    const roleIds = new Set(roles.map((r) => r.id));
 
     const select = h("select", { "aria-label": "Mission template" }, [
       h("option", { value: "", text: "— apply a template…" }),
@@ -85,63 +90,46 @@
     ]);
 
     const cards = templates.map((tp) => {
-      const seatsInput = h("input", {
-        type: "text",
-        class: "tpl-seats",
-        value: tp.seats.join(", "),
-        "aria-label": "seats of template " + tp.name,
-        on: {
-          change: (e) => {
-            const ids = e.target.value.split(",").map((x) => x.trim()).filter(Boolean);
-            const bad = ids.filter((id) => !roleIds.has(id));
-            if (bad.length > 0) {
-              e.target.classList.add("invalid");
-              return;
-            }
-            e.target.classList.remove("invalid");
-            tp.seats = ids;
-            app.settingsChanged();
-          },
-        },
+      const counts = {};
+      for (const id of tp.seats) counts[id] = (counts[id] || 0) + 1;
+      const counters = roles.map((r) => {
+        const c = counts[r.id] || 0;
+        return h("div", { class: "tpl-count" }, [
+          h("span", { class: "tpl-role-name", text: r.name }),
+          h("button", {
+            type: "button", class: "count-btn", text: "−", disabled: c === 0,
+            title: "remove one " + r.name + " seat",
+            on: {
+              click: () => {
+                const i = tp.seats.indexOf(r.id);
+                if (i !== -1) tp.seats.splice(i, 1);
+                app.settingsChanged();
+              },
+            },
+          }),
+          h("span", { class: "tpl-num", text: String(c) }),
+          h("button", {
+            type: "button", class: "count-btn", text: "+",
+            title: "add one " + r.name + " seat",
+            on: { click: () => { tp.seats.push(r.id); app.settingsChanged(); } },
+          }),
+        ]);
       });
       return h("div", { class: "tpl-card" }, [
         h("input", {
-          type: "text",
-          class: "tpl-name",
-          value: tp.name,
-          "aria-label": "template name",
+          type: "text", class: "tpl-name", value: tp.name, "aria-label": "template name",
           on: { change: (e) => { tp.name = e.target.value || tp.id; app.settingsChanged(); } },
         }),
-        seatsInput,
+        h("div", { class: "tpl-counters" }, counters),
         h("span", { class: "btn-row" }, [
+          h("button", { type: "button", text: "Apply", title: "Fill the seat builder with this template", on: { click: () => { state.settings.seats = tp.seats.slice(); app.settingsChanged(); } } }),
           h("button", {
-            type: "button",
-            text: "Apply",
-            title: "Fill the seat builder with this template",
-            on: { click: () => { state.settings.seats = tp.seats.slice(); app.settingsChanged(); } },
+            type: "button", text: "Duplicate",
+            on: { click: () => { templates.splice(templates.indexOf(tp) + 1, 0, XS.domain.makeTemplate({ name: tp.name + " (copy)", seats: tp.seats.slice() })); app.settingsChanged(); } },
           }),
           h("button", {
-            type: "button",
-            text: "Duplicate",
-            on: {
-              click: () => {
-                templates.splice(templates.indexOf(tp) + 1, 0, XS.domain.makeTemplate({ name: tp.name + " (copy)", seats: tp.seats.slice() }));
-                app.settingsChanged();
-              },
-            },
-          }),
-          h("button", {
-            type: "button",
-            class: "danger",
-            text: "Delete",
-            disabled: templates.length <= 1,
-            on: {
-              click: () => {
-                if (templates.length <= 1) return;
-                templates.splice(templates.indexOf(tp), 1);
-                app.settingsChanged();
-              },
-            },
+            type: "button", class: "danger", text: "Delete", disabled: templates.length <= 1,
+            on: { click: () => { if (templates.length <= 1) return; templates.splice(templates.indexOf(tp), 1); app.settingsChanged(); } },
           }),
         ]),
       ]);
@@ -150,31 +138,21 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Mission templates" }),
-        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Applying one fills the seat builder below — you can still tweak individual seats afterwards. Seats are comma-separated role ids; unknown ids are rejected." }),
+        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Apply one, then tweak seats below. Edit a template with the +/− buttons per role — no typing needed." }),
         h("div", { class: "tpl-apply" }, [
           select,
           h("button", {
-            type: "button",
-            text: "Apply template",
+            type: "button", text: "Apply template",
             on: {
               click: () => {
                 const tp = templates.find((x) => x.id === select.value);
-                if (tp) {
-                  state.settings.seats = tp.seats.slice();
-                  app.settingsChanged();
-                }
+                if (tp) { state.settings.seats = tp.seats.slice(); app.settingsChanged(); }
               },
             },
           }),
           h("button", {
-            type: "button",
-            text: "+ New template from current seats",
-            on: {
-              click: () => {
-                templates.push(XS.domain.makeTemplate({ name: "Template " + (templates.length + 1), seats: state.settings.seats.slice() }));
-                app.settingsChanged();
-              },
-            },
+            type: "button", text: "+ New template from current seats",
+            on: { click: () => { templates.push(XS.domain.makeTemplate({ name: "Template " + (templates.length + 1), seats: state.settings.seats.slice() })); app.settingsChanged(); } },
           }),
         ]),
         h("div", { class: "tpl-list" }, cards),
@@ -182,6 +160,11 @@
     );
   }
 
+  /*
+   * Seat builder = the squad request. Quick-add buttons per role on top,
+   * then one chip per seat with its own role dropdown and remove button.
+   * No hardcoded maximum; defaults to 8 seats (CH-48 Charlie).
+   */
   function renderSeatBuilder(main, state) {
     const app = XS.app;
     const roles = state.settings.roles || [];
@@ -189,12 +172,10 @@
 
     const roleSelect = (seatIdx) =>
       h("select", {
+        class: "seat-role",
         "aria-label": "Role for seat " + (seatIdx + 1),
         on: {
-          change: (e) => {
-            seats[seatIdx] = e.target.value;
-            app.settingsChanged();
-          },
+          change: (e) => { seats[seatIdx] = e.target.value; app.settingsChanged(); },
         },
       }, roles.map((r) => {
         const attrs = { value: r.id, text: r.name };
@@ -202,54 +183,44 @@
         return h("option", attrs);
       }));
 
-    const rows = seats.map((roleId, i) =>
-      h("div", { class: "seat-row" }, [
-        h("span", { class: "seat-num", text: "Seat " + (i + 1) }),
+    const chips = seats.map((roleId, i) =>
+      h("div", { class: "seat-chip" }, [
+        h("span", { class: "seat-num", text: "#" + (i + 1) }),
         roleSelect(i),
         h("button", {
-          type: "button",
-          class: "danger",
-          text: "Remove",
-          title: "Remove this seat",
-          on: {
-            click: () => {
-              seats.splice(i, 1);
-              app.settingsChanged();
-            },
-          },
+          type: "button", class: "chip-x", text: "×", title: "Remove seat " + (i + 1),
+          on: { click: () => { seats.splice(i, 1); app.settingsChanged(); } },
         }),
       ])
+    );
+
+    const quickAdd = roles.map((r) =>
+      h("button", {
+        type: "button",
+        class: "quick-add",
+        text: "+ " + r.name,
+        title: "Add a " + r.name + " seat",
+        on: { click: () => { seats.push(r.id); app.settingsChanged(); } },
+      })
     );
 
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "2 · Squad request — " + seats.length + " seat" + (seats.length === 1 ? "" : "s") }),
-        h("p", { class: "muted", text: "Each seat has its own role. Add or remove seats freely — team size is simply the number of seats (the CH-48 Charlie carries 8 by default). The squad below re-plans live." }),
-        h("div", { class: "seat-list" }, rows),
+        h("p", { class: "muted", text: "Build your squad: click a role to add a seat, change a seat's role in its dropdown, remove with ×. Team size is simply the number of seats (the CH-48 Charlie carries 8 by default). The squad below re-plans live." }),
+        h("div", { class: "quick-add-row" }, quickAdd),
+        h("div", { class: "seat-list" }, chips),
         h("p", { class: "btn-row" }, [
           h("button", {
-            type: "button",
-            text: "+ Add seat",
-            on: {
-              click: () => {
-                seats.push(roles.length ? roles[0].id : "rifleman");
-                app.settingsChanged();
-              },
-            },
-          }),
-          h("button", {
-            type: "button",
-            class: "primary",
-            text: "Plan squad ▼",
+            type: "button", class: "primary", text: "Plan squad ▼",
             title: "Compute the optimal assignment and jump to the result",
             on: {
               click: () => {
-                // the plan is already computed live; this jumps to it and flashes it
                 const el = document.getElementById("squad-result");
                 if (el) {
                   el.scrollIntoView({ behavior: "smooth", block: "start" });
                   el.classList.remove("flash");
-                  void el.offsetWidth; // restart the CSS animation
+                  void el.offsetWidth;
                   el.classList.add("flash");
                 }
               },

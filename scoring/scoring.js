@@ -269,16 +269,23 @@
     const notices = [];
 
     /*
-     * Team membership filter: recruitment-pool soldiers (inTeam === false,
-     * detected via the teamStringPrefix format setting) are excluded from
-     * planning unless the global "include recruitable soldiers" setting is on.
-     * They are still shown in the Soldiers tab — just not fielded.
+     * Recruit mode (settings.global.includeRecruits, tri-state):
+     *   false   "off"   — plan with the active team only (default);
+     *   "empty" "empty" — team first; recruits may fill ONLY seats that ended
+     *                     up with no eligible team soldier;
+     *   true    "all"   — recruits compete for every seat like team soldiers.
+     * Recruitment-pool soldiers are the ones with inTeam === false (detected
+     * via the teamStringPrefix format setting). They always show in the
+     * Soldiers tab; they are just not fielded unless the mode says so.
+     * Any other value falls back to "off", so old or hand-edited settings and
+     * exports from earlier versions stay safe.
      */
-    const includeRecruits = !!(settings.global && settings.global.includeRecruits);
-    const planningRoster = includeRecruits ? soldiers : soldiers.filter((s) => s.inTeam !== false);
+    const recruitMode = g.includeRecruits === true ? "all" : g.includeRecruits === "empty" ? "empty" : "off";
+    const planningRoster = recruitMode === "all" ? soldiers : soldiers.filter((s) => s.inTeam !== false);
+    const recruitPoolAll = soldiers.filter((s) => s.inTeam === false);
     const recruitCount = soldiers.length - planningRoster.length;
-    if (recruitCount > 0) {
-      notices.push(recruitCount + " recruitable soldier(s) are not in the active team and were excluded from planning (Settings → include recruitable soldiers to change this).");
+    if (recruitCount > 0 && recruitMode === "off") {
+      notices.push(recruitCount + " recruitable soldier(s) are not in the active team and were excluded from planning (Settings → Recruits to change this).");
     }
 
     const eligibility = computeEligibility(planningRoster, settings);
@@ -308,35 +315,81 @@
       notices.push("Training seat: " + trainee.name + " rides along in seat " + (seatIdx + 1) + " (" + (rolesById[seats[seatIdx]] || {}).name + ").");
     }
 
-    // 4. one global assignment over the remaining seats
-    const subSeats = seatIdxs.map((j) => seats[j]);
-    const matrix = buildScoreMatrix(pool, subSeats, rolesById, settings, normOf);
-    const rowCol = solver(matrix);
-    const colRow = new Array(matrix.length).fill(-1);
-    for (let i = 0; i < rowCol.length; i++) if (rowCol[i] >= 0) colRow[rowCol[i]] = i;
+    /*
+     * One global assignment over a subset of seats. Shared by the team pass
+     * and the "empty seats" recruit pass below: build the score matrix of
+     * `poolArg` x those seats, solve it ONCE (never greedy per-seat), write
+     * the picks with their "why" lines. Seats whose solver cell is FORBIDDEN
+     * (or that map to a dummy pad row) stay empty; their notice is emitted by
+     * the final sweep after all passes, so wording can account for recruits.
+     */
+    function assignSeats(poolArg, seatIdxsArg) {
+      const subSeats = seatIdxsArg.map((j) => seats[j]);
+      const matrix = buildScoreMatrix(poolArg, subSeats, rolesById, settings, normOf);
+      const rowCol = solver(matrix);
+      const colRow = new Array(matrix.length).fill(-1);
+      for (let i = 0; i < rowCol.length; i++) if (rowCol[i] >= 0) colRow[rowCol[i]] = i;
 
-    for (let jj = 0; jj < seatIdxs.length; jj++) {
-      const seatIndex = seatIdxs[jj];
-      const roleId = seats[seatIndex];
-      const role = rolesById[roleId];
-      if (!role) continue;
-      const i = colRow[jj];
-      const soldier = i >= 0 && i < pool.length ? pool[i] : null; // dummy row -> unfilled
-      const cell = soldier ? matrix[i][jj] : FORBIDDEN;
-      if (!soldier || cell <= FORBIDDEN / 2) {
-        picks[seatIndex] = { seatIndex, roleId, role, soldier: null, score: null, why: ["no eligible soldier for this seat"], training: false };
-        notices.push("Seat " + (seatIndex + 1) + " (" + role.name + "): no eligible soldier — left empty.");
-        continue;
+      for (let jj = 0; jj < seatIdxsArg.length; jj++) {
+        const seatIndex = seatIdxsArg[jj];
+        const roleId = seats[seatIndex];
+        const role = rolesById[roleId];
+        if (!role) continue;
+        const i = colRow[jj];
+        const soldier = i >= 0 && i < poolArg.length ? poolArg[i] : null; // dummy row -> unfilled
+        const cell = soldier ? matrix[i][jj] : FORBIDDEN;
+        if (!soldier || cell <= FORBIDDEN / 2) {
+          picks[seatIndex] = { seatIndex, roleId, role, soldier: null, score: null, why: ["no eligible soldier for this seat"], training: false };
+          continue;
+        }
+        // why: top contributing stats (weight x normalized value)
+        const n = normOf(soldier);
+        const contribs = Object.keys(role.weights || {})
+          .map((st) => ({ st, c: (role.weights[st] || 0) * (n[st] || 0), w: role.weights[st] || 0, v: n[st] || 0 }))
+          .filter((x) => x.w > 0)
+          .sort((a, b) => (b.c - a.c) || (a.st < b.st ? -1 : 1))
+          .slice(0, 3)
+          .map((x) => x.st + " " + x.v.toFixed(2) + "×" + x.w);
+        picks[seatIndex] = { seatIndex, roleId, role, soldier, score: cell, why: contribs.length ? ["top stats: " + contribs.join(", ")] : ["no weighted stats"], training: false };
       }
-      // why: top contributing stats (weight x normalized value)
-      const n = normOf(soldier);
-      const contribs = Object.keys(role.weights || {})
-        .map((st) => ({ st, c: (role.weights[st] || 0) * (n[st] || 0), w: role.weights[st] || 0, v: n[st] || 0 }))
-        .filter((x) => x.w > 0)
-        .sort((a, b) => (b.c - a.c) || (a.st < b.st ? -1 : 1))
-        .slice(0, 3)
-        .map((x) => x.st + " " + x.v.toFixed(2) + "×" + x.w);
-      picks[seatIndex] = { seatIndex, roleId, role, soldier, score: cell, why: contribs.length ? ["top stats: " + contribs.join(", ")] : ["no weighted stats"], training: false };
+    }
+
+    // 4. one global assignment over the remaining (non-training) seats
+    assignSeats(pool, seatIdxs);
+
+    /*
+     * "empty" recruit mode: run a SECOND assignment with the recruit pool
+     * over ONLY the seats the team pass left empty — a recruit can never
+     * displace a soldier the active team could field. Recruits are scored
+     * against the SAME normalization as the team (norms over the eligible
+     * team roster), so their scores stay on the team's scale; floors and the
+     * encumbrance check still apply on raw stats, so an ineligible recruit
+     * just gets a FORBIDDEN cell and the seat stays empty.
+     */
+    if (recruitMode === "empty" && recruitPoolAll.length > 0) {
+      const emptySeatIdxs = seatIdxs.filter((j) => picks[j] && !picks[j].soldier);
+      if (emptySeatIdxs.length === 0) {
+        notices.push("Recruits held back: every seat had an eligible active-team soldier.");
+      } else {
+        const recElig = computeEligibility(recruitPoolAll, settings);
+        for (const e of recElig) if (!e.eligible) ineligible.push(e);
+        const recEligible = recElig.filter((e) => e.eligible).map((e) => e.soldier);
+        if (recEligible.length > 0) {
+          assignSeats(recEligible, emptySeatIdxs);
+          const filled = emptySeatIdxs.filter((j) => picks[j] && picks[j].soldier);
+          if (filled.length > 0) {
+            notices.push("Recruits used only for seat(s) " + filled.map((j) => (j + 1) + " (" + (rolesById[seats[j]] || {}).name + ")").join(", ") + " — no active-team soldier was eligible for " + (filled.length === 1 ? "this seat" : "these seats") + ".");
+          }
+        }
+      }
+    }
+
+    // one notice per seat that stayed empty after all passes
+    for (let j = 0; j < seats.length; j++) {
+      const p = picks[j];
+      if (p && !p.soldier) {
+        notices.push("Seat " + (j + 1) + " (" + p.role.name + "): no eligible soldier" + (recruitMode === "empty" ? " in the active team or the recruit pool" : "") + " — left empty.");
+      }
     }
 
     // flag recruitable picks so the UI can mark them ("hire first")

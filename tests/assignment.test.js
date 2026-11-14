@@ -168,6 +168,60 @@
     t.notOk(plan2.notices.some((n) => /hire/i.test(n)));
   });
 
+  test("assignment: recruit mode \"empty\" fills only seats with no eligible team soldier", (t) => {
+    // 3 seats, 2 team soldiers, 2 recruits. Team pass fills 2 seats and leaves
+    // 1 empty; the recruit pass must fill exactly that one with the best recruit.
+    const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });
+    const teamA = mkSoldier("teamA", { ACC: 50 }); teamA.inTeam = true;
+    const teamB = mkSoldier("teamB", { ACC: 40 }); teamB.inTeam = true;
+    const r1 = mkSoldier("rec1", { ACC: 90 }); r1.inTeam = false;
+    const r2 = mkSoldier("rec2", { ACC: 80 }); r2.inTeam = false;
+    const roster = [teamA, teamB, r1, r2];
+    const mk = (mode) => settingsFor([role], ["r", "r", "r"], { woundedThreshold: 0, includeRecruits: mode });
+    // off: only the 2 team soldiers are planned, 1 seat stays empty
+    const off = XS.scoring.planSquad(roster, mk(false), { solver: XS.hungarian.hungarianMax });
+    t.deepEqual(off.picks.map((p) => (p && p.soldier ? p.soldier.id : "(empty)")).sort(), ["(empty)", "teamA", "teamB"]);
+    t.ok(off.notices.some((n) => /no eligible soldier/.test(n) && /left empty/.test(n)));
+    // all: recruits compete everywhere -> the two best recruits + best team soldier
+    const all = XS.scoring.planSquad(roster, mk(true), { solver: XS.hungarian.hungarianMax });
+    t.deepEqual(all.picks.map((p) => p.soldier.id).sort(), ["rec1", "rec2", "teamA"]);
+    // empty: team keeps both fillable seats, best recruit fills only the empty one
+    const emp = XS.scoring.planSquad(roster, mk("empty"), { solver: XS.hungarian.hungarianMax });
+    t.deepEqual(emp.picks.map((p) => (p && p.soldier ? p.soldier.id : null)).sort(), ["rec1", "teamA", "teamB"]);
+    t.equal(emp.picks.filter((p) => p && p.soldier && p.soldier.inTeam === false).length, 1, "exactly one recruit used");
+    t.ok(emp.notices.some((n) => /Recruits used only for seat/.test(n)), "notice names the recruit-filled seat");
+    t.ok(emp.notices.some((n) => /hire/i.test(n)), "hire-first notice still fires for the recruit pick");
+    t.notOk(emp.notices.some((n) => /excluded from planning/.test(n)), "no exclusion notice in empty mode");
+    // determinism of the tri-state pass
+    t.deepEqual(emp, XS.scoring.planSquad(roster, mk("empty"), { solver: XS.hungarian.hungarianMax }));
+  });
+
+  test("assignment: recruit mode \"empty\" respects floors and never displaces the team", (t) => {
+    // role with ACC floor 85: team soldier (ACC 50) cannot take the seat,
+    // recruit (ACC 90) can -> "empty" fills it with the recruit, "off" leaves it empty
+    const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, floors: { ACC: 85 }, kitWeight: 0 });
+    const teamA = mkSoldier("teamA", { ACC: 50 }); teamA.inTeam = true;
+    const r1 = mkSoldier("rec1", { ACC: 90 }); r1.inTeam = false;
+    const mk = (mode) => settingsFor([role], ["r"], { woundedThreshold: 0, includeRecruits: mode });
+    const emp = XS.scoring.planSquad([teamA, r1], mk("empty"), { solver: XS.hungarian.hungarianMax });
+    t.equal(emp.picks[0].soldier && emp.picks[0].soldier.id, "rec1", "recruit fills the seat the team cannot");
+    t.ok(emp.notices.some((n) => /Recruits used only for seat/.test(n)));
+    const off = XS.scoring.planSquad([teamA, r1], mk(false), { solver: XS.hungarian.hungarianMax });
+    t.notOk(off.picks[0].soldier, "off leaves the seat empty");
+    t.ok(off.notices.some((n) => /no eligible soldier/.test(n)));
+    // when the team CAN fill every seat, no recruit is used at all
+    const role2 = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });
+    const teamB = mkSoldier("teamB", { ACC: 70 }); teamB.inTeam = true;
+    const teamC = mkSoldier("teamC", { ACC: 60 }); teamC.inTeam = true;
+    const r2 = mkSoldier("rec2", { ACC: 95 }); r2.inTeam = false;
+    const s2 = settingsFor([role2], ["r", "r"], { woundedThreshold: 0, includeRecruits: "empty" });
+    const plan = XS.scoring.planSquad([teamB, teamC, r2], s2, { solver: XS.hungarian.hungarianMax });
+    t.deepEqual(plan.picks.map((p) => p.soldier.id).sort(), ["teamB", "teamC"], "team fills both seats");
+    t.notOk(plan.picks.some((p) => p.soldier && p.soldier.inTeam === false), "recruit never displaces a team soldier");
+    t.notOk(plan.notices.some((n) => /hire/i.test(n)), "no hire-first notice");
+    t.ok(plan.notices.some((n) => /held back/.test(n)), "notice says recruits were held back");
+  });
+
   test("assignment: rank tie-breaker decides exact ties through the pipeline", (t) => {
     // identical stats, different rank: the higher rank gets the single seat
     const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });

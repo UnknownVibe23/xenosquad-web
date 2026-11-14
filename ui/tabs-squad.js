@@ -14,6 +14,40 @@
   const XS = root.XS;
   const { h } = XS.dom;
 
+  /*
+   * Tri-state recruit mode control, shared with the Settings tab (exposed as
+   * XS.ui.recruitModeSelect). Values stored in settings.global.includeRecruits:
+   *   false   — off, active team only (default);
+   *   "empty" — recruits fill only seats no active-team soldier can fill;
+   *   true    — recruits compete for all seats.
+   */
+  const RECRUIT_MODES = [
+    { value: "false", label: "off — active team only (default)" },
+    { value: "empty", label: "only empty seats — recruits fill seats no team soldier can" },
+    { value: "true", label: "all seats — recruits compete for every seat" },
+  ];
+  function recruitModeSelect(state) {
+    const mode = state.settings.global ? state.settings.global.includeRecruits : false;
+    const current = mode === true ? "true" : mode === "empty" ? "empty" : "false";
+    return h("label", { class: "set-row" }, [
+      h("span", { text: "Recruits in the calculation" }),
+      h("select", {
+        "aria-label": "Recruits in the calculation",
+        on: {
+          change: (e) => {
+            const v = e.target.value;
+            state.settings.global.includeRecruits = v === "true" ? true : v === "empty" ? "empty" : false;
+            XS.app.settingsChanged();
+          },
+        },
+      }, RECRUIT_MODES.map((m) => {
+        const attrs = { value: m.value, text: m.label };
+        if (m.value === current) attrs.selected = true;
+        return h("option", attrs);
+      })),
+    ]);
+  }
+
   function renderInspector(main, state) {
     const info = state.parseInfo;
     if (state.error) {
@@ -272,23 +306,11 @@
     main.appendChild(
       h("section", { class: "panel", id: "squad-result" }, [
         h("h2", { text: "3 · Suggested squad — " + filled + " of " + total + " seats filled (optimal assignment via the Hungarian algorithm)" }),
-        h("p", { class: "muted", text: "Updates live whenever seats, roles or settings change. Recruits are excluded by default." }),
-        h("label", { class: "set-row check" }, [
-          h("input", {
-            type: "checkbox",
-            checked: !!(state.settings.global && state.settings.global.includeRecruits),
-            on: {
-              change: (e) => {
-                state.settings.global.includeRecruits = e.target.checked;
-                XS.app.settingsChanged();
-              },
-            },
-          }),
-          h("span", { text: "include recruitable soldiers in the calculation (off by default — only your active team is considered)" }),
-        ]),
+        h("p", { class: "muted", text: "Updates live whenever seats, roles or settings change." }),
+        recruitModeSelect(state),
         ...result.notices.map((n) => h("p", { class: "notice", text: n })),
         filled === 0 && total > 0
-          ? h("p", { class: "notice", text: "No seat could be filled. Check the wounded threshold and role floors in Settings/Roles, or tick 'include recruitable soldiers' above." })
+          ? h("p", { class: "notice", text: "No seat could be filled. Check the wounded threshold and role floors in Settings/Roles, or change the recruits mode above." })
           : null,
         h("div", { class: "pick-grid" }, pickCards),
       ])
@@ -322,4 +344,5 @@
 
   XS.ui = XS.ui || {};
   XS.ui.squad = renderSquad;
+  XS.ui.recruitModeSelect = recruitModeSelect;
 })(typeof self !== "undefined" ? self : globalThis);

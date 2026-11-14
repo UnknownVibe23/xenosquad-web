@@ -152,7 +152,7 @@ wrapper (classic `<script>` in the browser → works from `file://`; `module.exp
 
 | Tab | What it does |
 | --- | --- |
-| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live; recruits excluded by default with a notice |
+| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live; recruits tri-state (off by default / fill only empty seats / all seats) with notices and "hire first" badges |
 | Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP/wound status, game role, rank, loadout |
 | Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
 | Settings | global parameters (wounded threshold, encumbrance, psi era, training seat), save-format parameters, export/import JSON, per-section resets, reset all, **Clear all my data** |

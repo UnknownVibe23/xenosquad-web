@@ -72,6 +72,28 @@
     t.ok(XS.settings.validateSettings(42).length > 0);
   });
 
+  test("settings: includeRecruits is tri-state — false / \"empty\" / true — and round-trips", (t) => {
+    const withMode = (v) => {
+      const d = XS.settings.defaultSettings();
+      d.global.includeRecruits = v;
+      return d;
+    };
+    t.ok(XS.settings.validateSettings(withMode(false)).length === 0);
+    t.ok(XS.settings.validateSettings(withMode("empty")).length === 0);
+    t.ok(XS.settings.validateSettings(withMode(true)).length === 0);
+    t.ok(XS.settings.validateSettings(withMode("sometimes")).some((e) => /includeRecruits/.test(e)), "other values rejected");
+    t.ok(XS.settings.validateSettings(withMode(1)).some((e) => /includeRecruits/.test(e)), "numbers rejected");
+    // old boolean exports from previous versions still import fine
+    const d = XS.settings.defaultSettings();
+    d.global.includeRecruits = "empty";
+    const round = XS.settings.deserialize(XS.settings.serialize(d));
+    t.ok(round.ok);
+    t.equal(round.settings.global.includeRecruits, "empty", "tri-state value survives export/import");
+    // deepMerge keeps a saved tri-state value over the false default
+    t.equal(XS.settings.deepMerge(XS.settings.defaultSettings(), { global: { includeRecruits: "empty" } }).global.includeRecruits, "empty");
+    t.equal(XS.settings.deepMerge(XS.settings.defaultSettings(), { global: { includeRecruits: true } }).global.includeRecruits, true);
+  });
+
   test("settings: export -> import round-trips to identical settings", (t) => {
     const s = XS.settings.defaultSettings();
     s.global.psiEra = true;

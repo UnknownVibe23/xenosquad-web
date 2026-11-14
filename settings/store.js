@@ -63,7 +63,8 @@
        * when over full capacity); STR *trains* at >= strTrainThreshold x
        * capacity (0.8 in the game files), which is what strength_training
        * roles invert to. Also: psiBrvFloor (frontline BRV floor while the psi
-       * era is on), trainingSeatIndex (-1 = first seat), includeRecruits.
+       * era is on), trainingSeatIndex (-1 = first seat), includeRecruits
+       * (tri-state: false / "empty" / true).
        * All editable in the Settings tab.
        */
       global: {
@@ -76,7 +77,7 @@
         psiBrvFloor: 50, // BRV floor for frontline roles while psiEra is on
         trainingSeat: false, // reserve one seat for the lowest-composite soldier
         trainingSeatIndex: -1, // which seat (-1 = first seat)
-        includeRecruits: false, // false = plan only with active-team soldiers; recruits stay listed but benched out
+        includeRecruits: false, // tri-state: false = active team only (default); "empty" = recruits fill only seats no team soldier can fill; true = recruits compete for all seats
       },
       roles: XS.domain.defaultRoles(),
       /* The seat builder: a role id per seat. Defaults to 8 seats. */
@@ -129,6 +130,9 @@
       else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
     }
     if (obj.global !== undefined && !isPlainObject(obj.global)) errors.push("global must be an object");
+    else if (obj.global !== undefined && obj.global.includeRecruits !== undefined && [false, true, "empty"].indexOf(obj.global.includeRecruits) === -1) {
+      errors.push('global.includeRecruits must be false, "empty" or true');
+    }
     if (obj.roles !== undefined) {
       if (!Array.isArray(obj.roles)) errors.push("roles must be an array");
       else obj.roles.forEach((r, i) => { if (!isPlainObject(r) || typeof r.id !== "string" || typeof r.name !== "string") errors.push("roles[" + i + "] must have id and name strings"); });

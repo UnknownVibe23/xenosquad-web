@@ -72,7 +72,8 @@
           numField("Which seat is the training seat (-1 = first seat)", g.trainingSeatIndex, (v) => { if (Number.isFinite(v)) { g.trainingSeatIndex = Math.trunc(v); app.settingsChanged(); } }),
         ]),
         group("Recruits", [
-          checkField("Include recruitable soldiers in the calculation (off = active team only; picked recruits are marked 'hire first')", !!g.includeRecruits, (v) => { g.includeRecruits = v; app.settingsChanged(); }),
+          XS.ui.recruitModeSelect(state),
+          h("p", { class: "muted", text: "Picked recruits are always marked 'hire first' on their pick card, so you know to hire them in-game before the mission." }),
         ]),
         h("p", {}, [h("button", { type: "button", text: "Reset global to defaults", on: { click: () => { XS.settings.resetSection(s, "global"); app.settingsChanged(); } } })]),
       ])

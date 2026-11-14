@@ -75,7 +75,7 @@ LE IEEE-754 float; `FF FF FF FF` is -1/null. Soldier records are located by scan
 ASCII marker `SoldierFlags` (once per soldier - active team **and** recruitment pool alike). A record
 contains the nationality, full name, portrait string + int, the marker, a short nationality string,
 then **twelve** int32 stat values (six stats, each appearing twice - first copy current, second base),
-a zero-padding run containing one float at **stats-end + 40 bytes** (the current HP as a float; the
+a zero-padding run containing one float at **stats-end + 40 bytes** (NOT current HP - see below; the
 HP stat itself is the max), then `regiment.*`, `experience.*`, an optional transport-seat string
 (`Charlie - 1/13`), the in-game equipment role string, `armour.*` and loadout strings. Loadout
 strings (`weapon.*`/`ammo.*`) appear twice per block in real saves; the parser keeps the first
@@ -85,10 +85,12 @@ occurrence of each for display.
 slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 - the save data overrides the assumed order; the
 Calibrate tab can remap everything). **Team membership**: a block containing a `weapon.*` string is
 an active-team soldier; recruitment-pool soldiers have armour only (in the inspected saves this
-splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Recruit HP**:
-the recruit screen shows pool soldiers at full HP, so the float at the HP offset in a recruit block is
-a different field, not current HP - recruits are treated as HP-unknown and never wounded
-(`format.recruitHpIsFloat`, default false). **Rank**: postInts[0] (the first small int after the
+splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Current HP / wounds**: the float at the HP offset is a different field, NOT current HP - verified
+on a fresh-game save (game start, nobody wounded) where every soldier is at full HP in-game while
+the float reads 22-35, and on the recruit screen (pool soldiers always full HP). So current HP is
+treated as not locatable: the wounded check is off by default with a notice, the roster shows max
+HP, and recruits are never marked wounded. `calibration.currentHP` can still be mapped to the float
+or a slot (hidden Calibrate) if a real field is ever identified. **Rank**: postInts[0] (the first small int after the
 stats) is the soldier's rank POINTS (gameconfig.xml `soldierRanks`: PVT 0, CPL 3, SGT 9, LT 16,
 CPT 30, ...), and the first promotion PVT -> CPL adds **+2 to every stat** (Arqade/gameconfig) -
 verified against roster screenshots: the in-game screen shows stat-int + 2 for CPL+ soldiers while

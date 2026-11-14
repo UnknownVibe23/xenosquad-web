@@ -39,24 +39,25 @@
         marker: "SoldierFlags",
         statCount: 12,
         floatScanBytes: 96,
-        hpFloatOffset: 40, // bytes after the stats where the current-HP float sits
+        hpFloatOffset: 40, // bytes after the stats where the one padding float sits (NOT current HP; verified)
         stringScanBytes: 2048, // window after the stats for anchored strings; wide enough that repeated loadout strings are not truncated at the edge
         teamStringPrefix: "weapon.", // block containing such a string = active team (recruits have armour only)
-        // recruits are at full HP in-game; the HP-offset float in their block is a different field (verified) — keep false
-        recruitHpIsFloat: false,
         roleNames: XS.domain.EQUIPMENT_ROLES.slice(),
       },
       /*
        * Calibration: which raw slot of a soldier block is which stat.
        * VERIFIED against in-game roster screenshots: slots 0..5 of the first
        * (current) copy are TU, HP, STR, ACC, RFL, BRV — note the save stores
-       * HP in slot 1, not slot 5. The padding float is current HP. Rank points
-       * are postInts[0]; the PVT->CPL promotion bonus (+2 all stats) is applied
-       * via promotionBonus. All adjustable in Calibrate (hidden UI).
+       * HP in slot 1, not slot 5. The padding float is NOT current HP (verified
+       * on a fresh-game save: everyone is at full HP in-game while the float
+       * reads 22-35), so current HP defaults to "none" and the wounded check is
+       * off. Rank points are postInts[0]; the PVT->CPL promotion bonus (+2 all
+       * stats) is applied via promotionBonus. All adjustable in Calibrate.
        */
       calibration: {
         statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 },
-        currentHP: { kind: "float" }, // or { kind: "slot", slot: n }
+        currentHP: { kind: "none" }, // or { kind: "float" } / { kind: "slot", slot: n }
+        // rank POINTS live in postInts[0] (verified against roster screenshots;
         // rank POINTS live in postInts[0] (verified against roster screenshots;
         // gameconfig.xml soldierRanks thresholds)
         rank: { kind: "postInt", index: 0 }, // or { kind: "none" } / { kind: "slot", slot: n } / { kind: "experience" }
@@ -108,7 +109,8 @@
    * version is older than that.
    */
   const MIGRATIONS = {
-    "0.23.0": ["calibration"],
+    "0.23.0": ["calibration"], // rank points located + promotion bonus added
+    "0.25.0": ["calibration"], // current HP shown to be not locatable (wound check off)
   };
 
   /* Semver-ish compare: -1 / 0 / 1. Missing or non-numeric parts count as 0. */
@@ -195,9 +197,14 @@
       if (!Number.isInteger(f[k]) || f[k] < 0 || f[k] > 1 << 20) f[k] = d.format[k];
     }
     if (typeof f.teamStringPrefix !== "string" || f.teamStringPrefix.length > 64) f.teamStringPrefix = d.format.teamStringPrefix;
-    if (typeof f.recruitHpIsFloat !== "boolean") f.recruitHpIsFloat = d.format.recruitHpIsFloat;
     if (!Array.isArray(f.roleNames) || !f.roleNames.every((x) => typeof x === "string")) f.roleNames = d.format.roleNames;
     settings.format = f;
+    const c = isPlainObject(settings.calibration) ? settings.calibration : {};
+    if (!isPlainObject(c.statSlots)) c.statSlots = d.calibration.statSlots;
+    if (!isPlainObject(c.currentHP) || ["none", "float", "slot"].indexOf(c.currentHP.kind) === -1) c.currentHP = d.calibration.currentHP;
+    if (!isPlainObject(c.rank) || ["none", "slot", "experience", "postInt"].indexOf(c.rank.kind) === -1) c.rank = d.calibration.rank;
+    if (!isPlainObject(c.promotionBonus) || typeof c.promotionBonus.bonus !== "number" || typeof c.promotionBonus.rankPointsAtOrAbove !== "number") c.promotionBonus = d.calibration.promotionBonus;
+    settings.calibration = c;
     return settings;
   }
 
@@ -214,12 +221,16 @@
         if (obj.format[k] !== undefined && (!Number.isInteger(obj.format[k]) || obj.format[k] < 0 || obj.format[k] > (1 << 20))) errors.push("format." + k + " must be an integer in 0.." + (1 << 20));
       }
       if (typeof obj.format.teamStringPrefix !== "string" || obj.format.teamStringPrefix.length > 64) errors.push("format.teamStringPrefix must be a string of at most 64 chars");
-      if (obj.format.recruitHpIsFloat !== undefined && typeof obj.format.recruitHpIsFloat !== "boolean") errors.push("format.recruitHpIsFloat must be a boolean");
       if (obj.format.roleNames !== undefined && (!Array.isArray(obj.format.roleNames) || !obj.format.roleNames.every((x) => typeof x === "string"))) errors.push("format.roleNames must be an array of strings");
     }
     if (obj.calibration !== undefined) {
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");
-      else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
+      else {
+        if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
+        if (obj.calibration.currentHP !== undefined && (!isPlainObject(obj.calibration.currentHP) || ["none", "float", "slot"].indexOf(obj.calibration.currentHP.kind) === -1)) errors.push('calibration.currentHP.kind must be "none", "float" or "slot"');
+        if (obj.calibration.rank !== undefined && (!isPlainObject(obj.calibration.rank) || ["none", "slot", "experience", "postInt"].indexOf(obj.calibration.rank.kind) === -1)) errors.push('calibration.rank.kind must be "none", "slot", "experience" or "postInt"');
+        if (obj.calibration.promotionBonus !== undefined && (!isPlainObject(obj.calibration.promotionBonus) || typeof obj.calibration.promotionBonus.bonus !== "number" || typeof obj.calibration.promotionBonus.rankPointsAtOrAbove !== "number")) errors.push("calibration.promotionBonus needs numeric bonus and rankPointsAtOrAbove");
+      }
     }
     if (obj.global !== undefined && !isPlainObject(obj.global)) errors.push("global must be an object");
     else if (obj.global !== undefined) {

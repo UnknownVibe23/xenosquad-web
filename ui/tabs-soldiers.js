@@ -36,9 +36,8 @@
         (state.notices || []).length > 0 ? h("div", { class: "note-box" }, (state.notices || []).map((n) => h("p", { class: "note-inline", text: "Note: " + n }))) : null,
         h("ul", { class: "legend" }, [
           h("li", { text: "badge = team member (with transport seat, e.g. Charlie - 1/13) or recruit (recruitment pool)" }),
-          h("li", { text: "red status = wounded: current HP below the threshold (Settings → Eligibility)" }),
-          h("li", { text: "recruits are never wounded: in-game they are at full HP" }),
-          h("li", { text: "HP column = current/max HP and wound %" }),
+          h("li", { text: "HP column = max HP; the save has no locatable current-HP field (the padding float is a different field), so the wounded check is off and nobody is marked red" }),
+          h("li", { text: "recruits are at full HP in-game" }),
           h("li", { text: "stat columns = TU ACC RFL BRV STR HP, shown as in-game (the PVT to CPL promotion adds +2 to every stat; rank points from the save drive it)" }),
           h("li", { text: "rank = in-game rank from the save's rank points (PVT 0, CPL 3, SGT 9, ...)" }),
           h("li", { text: "loadout = equipment strings from the save (armour only for recruits)" }),
@@ -54,7 +53,7 @@
       h("th", { text: "Team" }),
       h("th", { text: "Nationality", class: "wrap" }),
       ...XS.domain.STATS.map((s) => h("th", { text: s, class: "num" })),
-      h("th", { text: "HP cur/max · wound", class: "num" }),
+      h("th", { text: "HP max", class: "num" }),
       h("th", { text: "Status" }),
       h("th", { text: "Rank", class: "num" }),
       h("th", { text: "Loadout", class: "wrap" }),
@@ -67,13 +66,12 @@
       const wounded = !isRecruit && frac != null && frac < threshold;
       const woundPct = frac == null ? "n/a" : Math.round(frac * 100) + "%";
       const teamLabel = isRecruit ? "recruit" : s.seat ? s.seat : "team";
-      const hpText = isRecruit
-        ? statCell(s.stats.HP) + " (full in-game)"
-        : s.currentHP == null || s.stats.HP == null ? "n/a" : Math.round(s.currentHP) + "/" + statCell(s.stats.HP) + " · " + woundPct;
+      // current HP is not stored in a locatable field -> show max HP only
+      const hpText = statCell(s.stats.HP) + " max";
       let statusText;
       let statusClass = "";
       if (isRecruit) statusText = "recruit: full HP in-game";
-      else if (frac == null) statusText = "HP unknown";
+      else if (frac == null) statusText = "wound data not in save (check off)";
       else if (wounded) {
         statusText = "wounded: " + Math.round(frac * 100) + "% < " + Math.round(threshold * 100) + "% threshold";
         statusClass = " wounded";

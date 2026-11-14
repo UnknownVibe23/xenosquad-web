@@ -29,7 +29,7 @@
     t.equal(d.format.statCount, 12);
     t.equal(d.format.hpFloatOffset, 40);
     t.equal(d.format.teamStringPrefix, "weapon.");
-    t.equal(d.format.recruitHpIsFloat, false, "recruit HP float is not current HP by default (verified in-game)");
+    t.deepEqual(d.calibration.currentHP, { kind: "none" }, "current HP not locatable by default (padding float is a different field, verified)");
     t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
     t.deepEqual(d.calibration.rank, { kind: "postInt", index: 0 }, "rank points = postInts[0] by default (verified)");
     t.deepEqual(d.calibration.promotionBonus, { rankPointsAtOrAbove: 3, bonus: 2 }, "PVT->CPL +2 all stats applied by default");
@@ -134,10 +134,10 @@
     t.ok(XS.settings.validateSettings(withMode(true)).length === 0);
     t.ok(XS.settings.validateSettings(withMode("sometimes")).some((e) => /includeRecruits/.test(e)), "other values rejected");
     t.ok(XS.settings.validateSettings(withMode(1)).some((e) => /includeRecruits/.test(e)), "numbers rejected");
-    t.ok(XS.settings.validateSettings({ format: { recruitHpIsFloat: 1 } }).some((e) => /recruitHpIsFloat/.test(e)), "non-boolean recruitHpIsFloat rejected");
-    const flagOn = XS.settings.defaultSettings();
-    flagOn.format.recruitHpIsFloat = true;
-    t.ok(XS.settings.validateSettings(flagOn).length === 0, "boolean recruitHpIsFloat accepted");
+    const badCal = XS.settings.defaultSettings();
+    badCal.calibration.currentHP = { kind: "bogus" };
+    t.ok(XS.settings.validateSettings(badCal).some((e) => /currentHP/.test(e)), "unknown currentHP kind rejected");
+    t.ok(XS.settings.validateSettings(XS.settings.defaultSettings()).length === 0);
     // old boolean exports from previous versions still import fine
     const d = XS.settings.defaultSettings();
     d.global.includeRecruits = "empty";

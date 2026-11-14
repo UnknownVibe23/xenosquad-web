@@ -145,8 +145,13 @@
       t.equal(s.stats.ACC, ints[3]);
       t.equal(s.stats.RFL, ints[4]);
       t.equal(s.stats.BRV, ints[5]);
-      t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "currentHP from the float");
+      t.equal(s.currentHP, null, "currentHP unknown by default: the padding float is NOT current HP (verified on a fresh-game save)");
     });
+    // opt-in float mapping still works (hidden Calibrate) for team soldiers
+    const sFloat = XS.settings.defaultSettings();
+    sFloat.calibration.currentHP = { kind: "float" };
+    const resF = XS.parser.parseSaveWithSettings(bufferOf(bytes), sFloat);
+    resF.soldiers.forEach((s, i) => t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "currentHP from the float when explicitly mapped"));
   });
 
   test("calibration: switching to the second copy (base) changes the stats", (t) => {
@@ -194,14 +199,18 @@
     t.ok(res3.soldiers[0].raw.postInts.length >= 10, "postInts exposed in raw record");
   });
 
-  test("calibration: full pipeline on the fixture gives wound status per soldier", (t) => {
+  test("calibration: wound status only when a current-HP mapping is set; default off with a notice", (t) => {
     const { bytes, spec } = fixture(41, 8);
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    res.soldiers.forEach((s, i) => {
-      const expected = spec.soldiers[i].hpFloat / spec.soldiers[i].statInts[1]; // HP is slot 1
-      t.approx(XS.domain.hpFraction(s), expected, 1e-6);
-      t.equal(s.equipmentRole, spec.soldiers[i].role);
+    res.soldiers.forEach((s) => t.equal(XS.domain.hpFraction(s), null, "no wound data by default"));
+    t.ok(res.notices.some((n) => /wounded check is disabled/.test(n)), "notice explains the wounded check is off");
+    res.soldiers.forEach((s, i) => t.equal(s.equipmentRole, spec.soldiers[i].role));
+    // with the float mapped explicitly, wound fractions compute (HP is slot 1)
+    settings.calibration.currentHP = { kind: "float" };
+    const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    res2.soldiers.forEach((s, i) => {
+      t.approx(XS.domain.hpFraction(s), spec.soldiers[i].hpFloat / spec.soldiers[i].statInts[1], 1e-6);
     });
   });
 
@@ -258,27 +267,23 @@
   });
 
   test("parser: recruit blocks — the HP-offset float is NOT current HP (recruits are full HP in-game)", (t) => {
-    // Verified against the in-game recruit screen: recruits always show full
-    // HP, so the float at hpFloatOffset in a recruit block is a different
-    // field and must not be read as a wound.
+    // Verified against the in-game recruit screen AND a fresh-game save: the
+    // float at hpFloatOffset is a different field (fresh team soldiers are at
+    // full HP in-game while the float reads 22-35). Default: no wound data at
+    // all. Even with the float mapped explicitly, recruits are never wounded.
     const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 45, soldiers: 6, recruitEvery: 2 });
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    res.soldiers.forEach((s, i) => {
-      if (spec.soldiers[i].inTeam) {
-        t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "team soldier " + i + " keeps the float as current HP");
-      } else {
-        t.equal(s.currentHP, null, "recruit " + i + ": current HP unknown, not the float");
-      }
-    });
-    t.ok(res.notices.some((n) => /full HP/.test(n)), "notice explains the recruit HP handling");
-    // opt-in format flag keeps the raw float if a future build ever stores it
-    const s2 = XS.settings.defaultSettings();
-    s2.format.recruitHpIsFloat = true;
-    const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), s2);
+    res.soldiers.forEach((s) => t.equal(s.currentHP, null, "current HP unknown by default for everyone"));
+    t.ok(res.notices.some((n) => /wounded check is disabled/.test(n)));
+    // float mapping enabled: team soldiers get the float, recruits stay null
+    settings.calibration.currentHP = { kind: "float" };
+    const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     res2.soldiers.forEach((s, i) => {
-      if (!spec.soldiers[i].inTeam) t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "recruitHpIsFloat=true keeps the float");
+      if (spec.soldiers[i].inTeam) t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "team soldier " + i + " gets the mapped float");
+      else t.equal(s.currentHP, null, "recruit " + i + ": never wounded (full HP in-game)");
     });
+    t.ok(res2.notices.some((n) => /full HP/.test(n)), "notice explains the recruit HP handling");
   });
 
   test("parser: teamStringPrefix is a setting — empty prefix disables the distinction", (t) => {

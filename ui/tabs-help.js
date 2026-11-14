@@ -38,8 +38,7 @@
         h("ul", {}, [
           h("li", { text: "The save holds your active team AND the recruitment pool: a block with a weapon.* string is in your team; recruits carry armour only. The Soldiers tab badges each one (team seat like \"Charlie - 1/13\", or recruit)." }),
           h("li", { text: "Recruits mode (Squad result panel or Settings → Recruits): off (default) / only empty seats (recruits fill just seats no team soldier can fill) / all seats. A recruit in the suggested squad gets a \"recruit: hire first\" badge." }),
-          h("li", { text: "Recruits are never wounded: in-game they are at full HP (verified on the recruit screen), and the float in their save block is a different field, so their current HP is shown as unknown, not as a wound." }),
-          h("li", { text: "A red row in the roster = wounded team soldier: current HP below the threshold (Settings → Eligibility). The Status column spells out the numbers." }),
+          h("li", { text: "Wounds: the soldier block has no locatable current-HP field (the one float in the padding is a different field, verified on a fresh-game save where everyone is at full HP in-game while the float reads 22-35). So the wounded check is off by default and nobody is marked red; the threshold in Settings → Eligibility applies as soon as a real HP mapping is configured." }),
         ]),
       ])
     );

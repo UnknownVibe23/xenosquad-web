@@ -116,6 +116,24 @@
     t.ok(/more warning/.test(res.anomalies[res.anomalies.length - 1]), "last entry reports the overflow");
   });
 
+  test("sanity: a current HP above max HP is flagged (block layout differs)", (t) => {
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 99, soldiers: 4 });
+    const patched = bytes.slice();
+    const view0 = new DataView(bufferOf(patched));
+    const res0 = XS.parser.parseSave(bufferOf(patched));
+    const m = res0.soldiers[0].markerOffset;
+    const snLen = view0.getInt32(m + "SoldierFlags".length + 1, true);
+    const winStart = m + "SoldierFlags".length + 1 + 4 + snLen + 12 * 4;
+    const I = XS.parser._internals;
+    const winText = I.ascii(patched.subarray(winStart, Math.min(patched.length, winStart + 2048)));
+    const ridx = winText.indexOf(res0.soldiers[0].strings.role);
+    t.ok(ridx >= 9, "role string found in the window");
+    const pv = new DataView(patched.buffer);
+    pv.setInt32(winStart + ridx - 9, 9999, true); // implausible current HP before the role string
+    const res = parseWith(patched);
+    t.ok(res.anomalies.some((a) => /current HP above/.test(a)), "hp-over-max anomaly: " + res.anomalies.join(" | "));
+  });
+
   test("sanity: fuzzed buffers with a planted marker never throw and always return an array", (t) => {
     const rnd = mulberry32(4242);
     const marker = new TextEncoder().encode("SoldierFlags");

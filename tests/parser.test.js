@@ -145,7 +145,7 @@
       t.equal(s.stats.ACC, ints[3]);
       t.equal(s.stats.RFL, ints[4]);
       t.equal(s.stats.BRV, ints[5]);
-      t.equal(s.currentHP, null, "currentHP unknown by default: the padding float is NOT current HP (verified on a fresh-game save)");
+      t.equal(s.currentHP, spec.soldiers[i].currentHP, "currentHP from the int before the role string (default beforeRole mapping)");
     });
     // opt-in float mapping still works (hidden Calibrate) for team soldiers
     const sFloat = XS.settings.defaultSettings();
@@ -199,14 +199,23 @@
     t.ok(res3.soldiers[0].raw.postInts.length >= 10, "postInts exposed in raw record");
   });
 
-  test("calibration: wound status only when a current-HP mapping is set; default off with a notice", (t) => {
+  test("calibration: wound fractions come from the beforeRole HP int by default; kind none disables the check with a notice", (t) => {
     const { bytes, spec } = fixture(41, 8);
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    res.soldiers.forEach((s) => t.equal(XS.domain.hpFraction(s), null, "no wound data by default"));
-    t.ok(res.notices.some((n) => /wounded check is disabled/.test(n)), "notice explains the wounded check is off");
-    res.soldiers.forEach((s, i) => t.equal(s.equipmentRole, spec.soldiers[i].role));
-    // with the float mapped explicitly, wound fractions compute (HP is slot 1)
+    res.soldiers.forEach((s, i) => {
+      t.equal(s.currentHP, spec.soldiers[i].currentHP, "currentHP = beforeRole int by default");
+      t.approx(XS.domain.hpFraction(s), spec.soldiers[i].currentHP / s.stats.HP, 1e-9, "hpFraction = current / max HP");
+      t.equal(s.equipmentRole, spec.soldiers[i].role);
+    });
+    t.notOk(res.notices.some((n) => /wounded check is off/.test(n)), "wounded check is on by default");
+    // explicit opt-out: no wound data, visible notice
+    settings.calibration.currentHP = { kind: "none" };
+    const resNone = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    resNone.soldiers.forEach((s) => t.equal(XS.domain.hpFraction(s), null, "no wound data when the mapping is disabled"));
+    t.ok(resNone.notices.some((n) => /wounded check is off/.test(n)), "notice explains the wounded check is off");
+    // the padding float stays available as an explicit mapping (it is NOT the
+    // verified HP field, but the option remains for other layouts)
     settings.calibration.currentHP = { kind: "float" };
     const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     res2.soldiers.forEach((s, i) => {
@@ -267,16 +276,17 @@
   });
 
   test("parser: recruit blocks — the HP-offset float is NOT current HP (recruits are full HP in-game)", (t) => {
-    // Verified against the in-game recruit screen AND a fresh-game save: the
-    // float at hpFloatOffset is a different field (fresh team soldiers are at
-    // full HP in-game while the float reads 22-35). Default: no wound data at
-    // all. Even with the float mapped explicitly, recruits are never wounded.
+    // Recruits are at full HP in-game (verified on the recruit screen); their
+    // HP field in the save block reads 0, so they are never treated as wounded.
     const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 45, soldiers: 6, recruitEvery: 2 });
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    res.soldiers.forEach((s) => t.equal(s.currentHP, null, "current HP unknown by default for everyone"));
-    t.ok(res.notices.some((n) => /wounded check is disabled/.test(n)));
-    // float mapping enabled: team soldiers get the float, recruits stay null
+    res.soldiers.forEach((s, i) => {
+      if (spec.soldiers[i].inTeam) t.equal(s.currentHP, spec.soldiers[i].currentHP, "team soldier " + i + " gets the beforeRole HP int");
+      else t.equal(s.currentHP, null, "recruit " + i + ": never wounded (full HP in-game)");
+    });
+    t.ok(res.notices.some((n) => /never treated as wounded/.test(n)), "notice explains the recruit HP handling");
+    // float mapping still available: team soldiers get the float, recruits stay null
     settings.calibration.currentHP = { kind: "float" };
     const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     res2.soldiers.forEach((s, i) => {
@@ -284,6 +294,23 @@
       else t.equal(s.currentHP, null, "recruit " + i + ": never wounded (full HP in-game)");
     });
     t.ok(res2.notices.some((n) => /full HP/.test(n)), "notice explains the recruit HP handling");
+  });
+
+  test("calibration: wounded soldiers (halved beforeRole HP) drop below the threshold and are excluded from planning", (t) => {
+    const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 61, soldiers: 8, woundEvery: 2 });
+    const settings = XS.settings.defaultSettings(); // woundedThreshold 0.75
+    const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    res.soldiers.forEach((s, i) => {
+      t.equal(s.currentHP, spec.soldiers[i].currentHP, "currentHP of " + s.name);
+      t.approx(XS.domain.hpFraction(s), spec.soldiers[i].currentHP / s.stats.HP, 1e-9, "hpFraction of " + s.name);
+    });
+    // every 2nd soldier (n = i+1 even, i.e. odd indices) is wounded at ~50% HP here
+    const plan = XS.scoring.planSquad(res.soldiers, settings, { seats: ["rifleman", "rifleman"], solver: XS.hungarian.hungarianMax });
+    const inelig = plan.ineligible.map((e) => e.soldier.name);
+    for (let i = 1; i < 8; i += 2) t.ok(inelig.indexOf(res.soldiers[i].name) !== -1, "wounded " + res.soldiers[i].name + " is ineligible");
+    t.ok(plan.ineligible.length > 0 && plan.ineligible.every((e) => e.reasons.some((r) => /wounded/.test(r))), "ineligible reasons name the wound");
+    const picked = plan.picks.filter((p) => p && p.soldier).map((p) => p.soldier.name);
+    for (let i = 1; i < 8; i += 2) t.ok(picked.indexOf(res.soldiers[i].name) === -1, "wounded " + res.soldiers[i].name + " is never picked");
   });
 
   test("parser: teamStringPrefix is a setting — empty prefix disables the distinction", (t) => {

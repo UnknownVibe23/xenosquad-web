@@ -37,11 +37,16 @@
       on: {
         change: (e) => {
           const v = e.target.value;
-          cal.currentHP = v === "float" ? { kind: "float" } : { kind: "slot", slot: parseInt(v, 10) };
+          if (v === "none") cal.currentHP = { kind: "none" };
+          else if (v === "float") cal.currentHP = { kind: "float" };
+          else if (v === "beforeRole") cal.currentHP = { kind: "beforeRole" };
+          else cal.currentHP = { kind: "slot", slot: parseInt(v, 10) };
           app.settingsChanged();
         },
       },
     }, [
+      option("beforeRole", "the int before the role string (verified)", cal.currentHP.kind === "beforeRole"),
+      option("none", "not mapped (wound check off)", cal.currentHP.kind === "none"),
       option("float", "the float in the padding", cal.currentHP.kind === "float"),
       ...Array.from({ length: statCount }, (_, i) => option(i, "slot " + i, cal.currentHP.kind === "slot" && cal.currentHP.slot === i)),
     ]);
@@ -68,7 +73,7 @@
 
     const controls = h("section", { class: "panel" }, [
       h("h2", { text: "Stat mapping (applies to every soldier)" }),
-      h("p", { class: "muted", text: "Verified against the current game build: slots 0..5 = TU, HP, STR, ACC, RFL, BRV (first copy = current), the padding float = current HP. You normally never need to touch this; only change a mapping if your save's values look wrong (e.g. after a game patch)." }),
+      h("p", { class: "muted", text: "Verified against the current game build: slots 0..5 = TU, HP, STR, ACC, RFL, BRV (first copy = current), and the int stored right before the role string = current HP (the padding float is a different field). You normally never need to touch this; only change a mapping if your save's values look wrong (e.g. after a game patch)." }),
       h("p", {
         class: "muted",
         text: "Each dropdown assigns one of the six stats to a raw value slot in the save block (the block holds " + statCount + " ints; in the inspected save, six stats appearing twice, likely current then base). The float in the zero padding is a separate value. Change anything and the roster below re-parses live.",
@@ -113,7 +118,7 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Raw values per soldier (" + state.roster.length + ")" }),
-        h("p", { class: "muted", text: "Highlighted slots are currently mapped to a stat. The float column is the float in the padding after the stats (current HP). The post# columns are the small ints between the stats and the float; not certainly identified (candidates for missions/kills/rank), so they are only used if you map rank to one." }),
+        h("p", { class: "muted", text: "Highlighted slots are currently mapped to a stat. The float column is the float in the padding after the stats (a different field, NOT current HP). The post# columns are the small ints after the stats; post#0 is the rank points (verified), the rest are not certainly identified, so they are only used if you map rank to one." }),
         h("div", { class: "table-wrap" }, [h("table", { class: "roster" }, [h("thead", {}, [h("tr", {}, headCells)]), h("tbody", {}, rows)])]),
       ])
     );

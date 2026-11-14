@@ -85,12 +85,16 @@ occurrence of each for display.
 slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 - the save data overrides the assumed order; the
 Calibrate tab can remap everything). **Team membership**: a block containing a `weapon.*` string is
 an active-team soldier; recruitment-pool soldiers have armour only (in the inspected saves this
-splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Current HP / wounds**: the float at the HP offset is a different field, NOT current HP - verified
-on a fresh-game save (game start, nobody wounded) where every soldier is at full HP in-game while
-the float reads 22-35, and on the recruit screen (pool soldiers always full HP). So current HP is
-treated as not locatable: the wounded check is off by default with a notice, the roster shows max
-HP, and recruits are never marked wounded. `calibration.currentHP` can still be mapped to the float
-or a slot (hidden Calibrate) if a real field is ever identified. **Rank**: postInts[0] (the first small int after the
+splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Current HP / wounds**: LOCATED and verified (0.27.0) - the int32 stored 9 bytes before the role
+string's content (right after the transport-seat index; layout: seat string, seatIndex i32,
+currentHP i32, flag u8, roleLen, role) is the soldier's current HP on the in-game scale (it
+includes the PVT->CPL +2 bonus, so it divides cleanly by the bonus-adjusted HP stat). Verified
+across three real saves: everyone reads full HP except one soldier in the latest save (35 of max
+50). Recruits' field reads 0 and they are always at full HP in-game, so they are never marked
+wounded. The wounded check is therefore ON by default (threshold 0.75). The float at stats-end+40
+remains NOT current HP (it drifts by small fractions between re-saves of the same game).
+`calibration.currentHP` can still be switched to `none` (wound check off), `float` or a slot
+(hidden Calibrate) for other layouts. **Rank**: postInts[0] (the first small int after the
 stats) is the soldier's rank POINTS (gameconfig.xml `soldierRanks`: PVT 0, CPL 3, SGT 9, LT 16,
 CPT 30, ...), and the first promotion PVT -> CPL adds **+2 to every stat** (Arqade/gameconfig) -
 verified against roster screenshots: the in-game screen shows stat-int + 2 for CPL+ soldiers while

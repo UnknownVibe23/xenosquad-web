@@ -81,13 +81,14 @@
 
   /*
    * Build a synthetic save. Options: { seed, soldiers, saveName, gameDate,
-   * recruitEvery, rankPoints } — with recruitEvery = N, every N-th soldier is
-   * a RECRUIT (armour only, no weapon.* strings, no seat), mimicking the
-   * recruitment pool; everyone else is active team with a loadout. rankPoints
-   * sets postInts[0] (the rank-point field; >= 3 means promoted past PVT, so
-   * the parser applies the +2 promotion bonus). Returns
-   * { bytes, spec } — `spec` exposes exactly what was written (incl. inTeam)
-   * so tests can assert against it.
+   * recruitEvery, rankPoints, woundEvery } — with recruitEvery = N, every N-th
+   * soldier is a RECRUIT (armour only, no weapon.* strings, no seat),
+   * mimicking the recruitment pool; everyone else is active team with a
+   * loadout. rankPoints sets postInts[0] (the rank-point field; >= 3 means
+   * promoted past PVT, so the parser applies the +2 promotion bonus).
+   * woundEvery = N makes every N-th TEAM soldier wounded (current HP halved).
+   * Returns { bytes, spec } — `spec` exposes exactly what was written (incl.
+   * inTeam and currentHP) so tests can assert against it.
    */
   function buildFixtureSave(options) {
     const opts = options || {};
@@ -95,6 +96,7 @@
     const count = opts.soldiers == null ? 10 : opts.soldiers;
     const recruitEvery = opts.recruitEvery == null ? 0 : opts.recruitEvery;
     const rankPoints = opts.rankPoints == null ? 0 : opts.rankPoints;
+    const woundEvery = opts.woundEvery == null ? 0 : opts.woundEvery;
     const saveName = opts.saveName || "planner-test";
     const gameDate = opts.gameDate || "00:00 01 Sep 1979";
     const rnd = mulberry32(seed);
@@ -160,10 +162,16 @@
       w.str(regiment);
       w.str(experience);
       w.i32(0);
-      w.i32(-1); // FF FF FF FF
-      if (seat && !isRecruit) w.str(seat); else w.str("None");
-      w.i32(3);
-      w.i32(56);
+      // transport seat region, matching the real layout (verified byte-level):
+      // seat string (empty when none), seat-index int (-1 = no seat), then the
+      // CURRENT HP int32, then a flag byte, then the role string. Recruits
+      // store 0 as HP (they are always at full HP in-game).
+      if (seat && !isRecruit) w.str(seat); else w.str("");
+      w.i32(seat && !isRecruit ? n : -1);
+      const inGameMaxHP = statInts[1] + (rankPoints >= 3 ? 2 : 0); // HP slot + promotion bonus
+      const wounded = !isRecruit && woundEvery > 0 && n % woundEvery === 0;
+      const curHP = isRecruit ? 0 : wounded ? Math.max(1, Math.floor(inGameMaxHP / 2)) : inGameMaxHP;
+      w.i32(curHP);
       w.u8(1);
       w.str(role);
       w.str("Corporation.DeadSoldiersImplemented");
@@ -191,6 +199,7 @@
         loadout: isRecruit ? [] : [weapon, ammo, weapon, grenade],
         seat: isRecruit ? null : seat,
         inTeam: !isRecruit,
+        currentHP: curHP,
       });
     }
 

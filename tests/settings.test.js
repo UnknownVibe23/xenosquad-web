@@ -29,7 +29,7 @@
     t.equal(d.format.statCount, 12);
     t.equal(d.format.hpFloatOffset, 40);
     t.equal(d.format.teamStringPrefix, "weapon.");
-    t.deepEqual(d.calibration.currentHP, { kind: "none" }, "current HP not locatable by default (padding float is a different field, verified)");
+    t.deepEqual(d.calibration.currentHP, { kind: "beforeRole" }, "current HP read from the int before the role string by default (verified on real saves)");
     t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
     t.deepEqual(d.calibration.rank, { kind: "postInt", index: 0 }, "rank points = postInts[0] by default (verified)");
     t.deepEqual(d.calibration.promotionBonus, { rankPointsAtOrAbove: 3, bonus: 2 }, "PVT->CPL +2 all stats applied by default");

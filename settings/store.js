@@ -61,7 +61,13 @@
        */
       calibration: {
         statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 },
-        currentHP: { kind: "none" }, // or { kind: "float" } / { kind: "slot", slot: n }
+        // VERIFIED on real saves (0.27.0): the int32 9 bytes before the role
+        // string is the in-game current HP (includes the promotion bonus).
+        // Recruits read 0 there and are always full HP in-game. The padding
+        // float is a different field. Alternatives kept for other layouts:
+        // { kind: "none" } disables the wounded check, { kind: "float" } /
+        // { kind: "slot", slot: n } map another field (hidden Calibrate).
+        currentHP: { kind: "beforeRole" },
         // rank POINTS live in postInts[0] (verified against roster screenshots;
         // rank POINTS live in postInts[0] (verified against roster screenshots;
         // gameconfig.xml soldierRanks thresholds)
@@ -115,7 +121,8 @@
    */
   const MIGRATIONS = {
     "0.23.0": ["calibration"], // rank points located + promotion bonus added
-    "0.25.0": ["calibration"], // current HP shown to be not locatable (wound check off)
+    "0.25.0": ["calibration"], // wound check temporarily off (float thought to be HP)
+    "0.27.0": ["calibration"], // current HP located (int before the role string); wound check on again
   };
 
   /* Semver-ish compare: -1 / 0 / 1. Missing or non-numeric parts count as 0. */
@@ -213,7 +220,7 @@
     settings.format = f;
     const c = isPlainObject(settings.calibration) ? settings.calibration : {};
     if (!isPlainObject(c.statSlots)) c.statSlots = d.calibration.statSlots;
-    if (!isPlainObject(c.currentHP) || ["none", "float", "slot"].indexOf(c.currentHP.kind) === -1) c.currentHP = d.calibration.currentHP;
+    if (!isPlainObject(c.currentHP) || ["none", "float", "slot", "beforeRole"].indexOf(c.currentHP.kind) === -1) c.currentHP = d.calibration.currentHP;
     if (!isPlainObject(c.rank) || ["none", "slot", "experience", "postInt"].indexOf(c.rank.kind) === -1) c.rank = d.calibration.rank;
     if (!isPlainObject(c.promotionBonus) || typeof c.promotionBonus.bonus !== "number" || typeof c.promotionBonus.rankPointsAtOrAbove !== "number") c.promotionBonus = d.calibration.promotionBonus;
     settings.calibration = c;
@@ -248,7 +255,7 @@
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");
       else {
         if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
-        if (obj.calibration.currentHP !== undefined && (!isPlainObject(obj.calibration.currentHP) || ["none", "float", "slot"].indexOf(obj.calibration.currentHP.kind) === -1)) errors.push('calibration.currentHP.kind must be "none", "float" or "slot"');
+        if (obj.calibration.currentHP !== undefined && (!isPlainObject(obj.calibration.currentHP) || ["none", "float", "slot", "beforeRole"].indexOf(obj.calibration.currentHP.kind) === -1)) errors.push('calibration.currentHP.kind must be "none", "float", "slot" or "beforeRole"');
         if (obj.calibration.rank !== undefined && (!isPlainObject(obj.calibration.rank) || ["none", "slot", "experience", "postInt"].indexOf(obj.calibration.rank.kind) === -1)) errors.push('calibration.rank.kind must be "none", "slot", "experience" or "postInt"');
         if (obj.calibration.promotionBonus !== undefined && (!isPlainObject(obj.calibration.promotionBonus) || typeof obj.calibration.promotionBonus.bonus !== "number" || typeof obj.calibration.promotionBonus.rankPointsAtOrAbove !== "number")) errors.push("calibration.promotionBonus needs numeric bonus and rankPointsAtOrAbove");
       }

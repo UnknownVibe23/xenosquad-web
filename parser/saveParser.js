@@ -22,9 +22,14 @@
  *     padding with one float among it (at stats-end + hpFloatOffset, i.e. 40
  *     bytes in; NOT current HP, verified), then anchored strings:
  *     "regiment.*", "experience.*", an optional transport-seat string
- *     ("Charlie - 1/13"), the in-game equipment role ("Rifleman", ...),
- *     "armour.*", and loadout strings ("weapon.*", "ammo.*",
- *     "weapon.grenade.*"). Soldiers in the ACTIVE TEAM always carry a
+ *     ("Charlie - 1/13") or an empty string, a seat-index int (-1 = no seat),
+ *     then the CURRENT HP as an int32 (it sits 9 bytes before the role
+ *     string's content: seatIndex i32, currentHP i32, flag u8, roleLen,
+ *     role; verified byte-level on three real saves, incl. one where a soldier
+ *     reads 35 of max 50 while all others read full; recruits read 0 and are
+ *     always at full HP in-game), then the in-game equipment role
+ *     ("Rifleman", ...), "armour.*", and loadout strings ("weapon.*",
+ *     "ammo.*", "weapon.grenade.*"). Soldiers in the ACTIVE TEAM always carry a
  *     "weapon.*" string; recruitment-pool soldiers have armour only — that
  *     prefix is the teamStringPrefix format setting.
  *   header:             4-byte magic "onex", int32 version, then strings:
@@ -277,6 +282,22 @@
       }
     }
     strings.role = bestRole ? bestRole.value : null;
+    /*
+     * CURRENT HP, verified on real saves: the int32 sitting 9 bytes before the
+     * role string's content (layout: ... seat string, seatIndex i32,
+     * currentHP i32, flag u8, roleLen i32, role ...). It is on the in-game HP
+     * scale (includes the PVT->CPL +2 promotion bonus). Recruits' field reads
+     * 0 there, and recruits are at full HP in-game anyway. We only accept a
+     * plausible positive value; anything else means "not found" (null).
+     */
+    let intBeforeRole = null;
+    if (bestRole && bestRole.index >= 9) {
+      const p = windowStart + bestRole.index - 9;
+      if (p >= 0 && p + 4 <= bytes.length) {
+        const v = readInt32(view, p);
+        if (Number.isFinite(v) && v > 0 && v < 100000) intBeforeRole = v;
+      }
+    }
     // loadout: every weapon.* / ammo.* string, in file order
     const loadout = [];
     for (const prefix of ["weapon.", "ammo."]) {
@@ -314,6 +335,7 @@
       statInts,
       rawFloats,
       hpFloat,
+      intBeforeRole, // current HP (verified), null when not found/plausible
       postInts,
       inTeam,
       strings,
@@ -391,18 +413,19 @@
       stats[s] = Number.isInteger(slot) && slot >= 0 && slot < raw.statInts.length ? raw.statInts[slot] : null;
     }
     /*
-     * Current HP: NOT locatable as its own field. The one float in the padding
-     * (stats-end + hpFloatOffset) looks like HP but is a different field:
-     * verified against a fresh-game save where every soldier is at full HP
-     * in-game while the float reads 22-35 (and recruit screens always show
-     * full HP). Default kind is therefore "none" -> currentHP null -> the
-     * wounded check is disabled with a notice instead of inventing values.
-     * "float"/"slot" remain available (hidden Calibrate) if a real field is
-     * ever identified.
+     * Current HP: VERIFIED to be the int32 stored 9 bytes before the role
+     * string (intBeforeRole, read in extractRecord) - it is on the in-game HP
+     * scale, i.e. it includes the promotion bonus, so it divides cleanly by the
+     * calibrated (bonus-adjusted) HP stat. The one float in the padding
+     * (stats-end + hpFloatOffset) is a DIFFERENT field (it drifts by small
+     * fractions between re-saves of the same game). Default kind is
+     * "beforeRole"; "none" disables the wounded check with a notice, and
+     * "float"/"slot" remain available (hidden Calibrate) for other layouts.
      */
     let currentHP = null;
-    const chp = cal.currentHP || { kind: "none" };
+    const chp = cal.currentHP || { kind: "beforeRole" };
     if (chp.kind === "float") currentHP = raw.hpFloat;
+    else if (chp.kind === "beforeRole") currentHP = typeof raw.intBeforeRole === "number" ? raw.intBeforeRole : null;
     else if (chp.kind === "slot" && Number.isInteger(chp.slot) && chp.slot >= 0 && chp.slot < raw.statInts.length) currentHP = raw.statInts[chp.slot];
     let rank = 0;
     let rankKind = "none";
@@ -453,7 +476,7 @@
       experience: raw.strings.experience,
       armour: raw.strings.armour,
       loadout,
-      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
+      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, intBeforeRole: raw.intBeforeRole, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
     });
   }
 
@@ -517,6 +540,7 @@
     let badRank = 0, rankExample = "";
     let nullRole = 0;
     let seatNoTeam = 0;
+    let hpOverMax = 0, hpExample = "";
     for (const s of soldiers) {
       const raw = isObj(s.raw) ? s.raw : {};
       const ints = Array.isArray(raw.statInts) ? raw.statInts : [];
@@ -535,11 +559,18 @@
       }
       if (s.equipmentRole == null) nullRole++;
       if (s.seat && s.inTeam === false) seatNoTeam++;
+      // a located current HP above the (bonus-adjusted) max HP means the block
+      // layout is not the vanilla one we verified
+      if (typeof s.currentHP === "number" && typeof s.stats.HP === "number" && s.currentHP > s.stats.HP + 0.5) {
+        hpOverMax++;
+        if (!hpExample) hpExample = (s.name || "soldier") + " current " + s.currentHP + " > max " + s.stats.HP;
+      }
     }
     if (badStats > 0) add(badStats + " stat value(s) outside the plausible range " + san.statMin + ".." + san.statMax + " (first: " + statExample + "); the stat block may be misaligned in this file.");
     if (badRank > 0) add(badRank + " rank point value(s) outside 0.." + san.rankMax + " (first: " + rankExample + ").");
     if (soldiers.length > 0 && nullRole === soldiers.length) add("No in-game equipment-role string was found in any soldier block (expected one of: " + (Array.isArray(format.roleNames) ? format.roleNames.join(", ") : "Rifleman, Assault, ...") + ").");
     if (seatNoTeam > 0) add(seatNoTeam + ' soldier(s) have a transport seat but no "' + (format.teamStringPrefix || "weapon.") + '" string (team detection is inconsistent in this file).');
+    if (hpOverMax > 0) add(hpOverMax + " soldier(s) have a current HP above their max HP (first: " + hpExample + "); the block layout may differ in this file.");
     const prefix = typeof format.teamStringPrefix === "string" ? format.teamStringPrefix : "";
     if (prefix && soldiers.length > 0 && soldiers.every((s) => s.inTeam === false)) {
       add('No soldier block contains a "' + prefix + '" string, so active team and recruitment pool could not be told apart.');
@@ -567,25 +598,27 @@
       notices.push("Rank mapping is disabled in settings, so the rank tie-breaker is off (all ranks count as equal).");
     }
     let missingHP = true;
-    const chp = cal.currentHP || { kind: "none" };
-    let recruitHpNulled = false;
+    let hasRecruits = false;
+    const chp = cal.currentHP || { kind: "beforeRole" };
     const soldiers = res.soldiers.map((raw) => {
       const s = calibrateSoldier(raw, cal);
       if (typeof s.currentHP === "number") missingHP = false;
-      // even if a float mapping is enabled: recruits are at full HP in-game
-      // (verified on the recruit screen), their block's float is not HP
-      if (s.inTeam === false && chp.kind === "float" && typeof s.currentHP === "number") {
-        s.currentHP = null;
-        recruitHpNulled = true;
+      // recruits are at full HP in-game (verified on the recruit screen), so
+      // their HP field is never used: they are never treated as wounded
+      if (s.inTeam === false) {
+        hasRecruits = true;
+        if ((chp.kind === "float" || chp.kind === "beforeRole") && typeof s.currentHP === "number") s.currentHP = null;
       }
       return s;
     });
     if (chp.kind === "none") {
-      notices.push("Current HP is not locatable in the soldier block (the float in the padding is a different field; verified: fresh soldiers are at full HP in-game), so the wounded check is disabled.");
+      notices.push("Current-HP mapping is disabled in settings, so the wounded check is off (everyone counts as healthy).");
     } else if (missingHP) {
       notices.push("No current-HP value was found in the soldier blocks, so the wounded check is skipped. Check the 'current HP' mapping in the Calibrate tab.");
     }
-    if (recruitHpNulled) notices.push("Recruitable soldiers are at full HP in-game; the float in their save block is a different field, so their current HP is shown as unknown and they are never treated as wounded.");
+    if (hasRecruits && chp.kind !== "none") {
+      notices.push("Recruitable soldiers are at full HP in-game, so they are never treated as wounded.");
+    }
     const anomalies = sanityCheck(Object.assign({}, res, { soldiers }), settings);
     return Object.assign({}, res, { soldiers, notices, anomalies });
   }

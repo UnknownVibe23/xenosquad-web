@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.26.0";
+  const APP_VERSION = "0.27.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.27.0", note: "Current HP located and verified on a new real save: the int32 stored 9 bytes before the role string (right after the transport-seat index) is the soldier's in-game current HP; in the latest save one soldier reads 35 of max 50 while everyone else reads full. The wounded check is ON by default again (threshold 0.75): the roster shows current/max HP and wound %, red rows are wounded, and recruits are never wounded. The sanity check now also flags a current HP above max HP. Calibration migrates on upgrade." },
     { version: "0.26.0", note: "Save reliability: on load the parser now sanity-checks the parsed values (header magic/version, stat ranges, rank points, role strings, team marker; thresholds in settings.format.sanity) and shows a prominent warning when a file is not a vanilla Xenonauts 1 save, so an X:CE/modded/corrupted save can no longer produce silently wrong numbers. Help and README document the supported saves (vanilla 1.06, X:CE with saveCompatibility gh15x) and recommend geoscape saves." },
     { version: "0.25.0", note: "Wound check fixed: verified on a fresh-game save that the padding float is NOT current HP (everyone is at full HP in-game while the float reads 22-35), so current HP is now treated as not locatable, the wounded check is off by default with a notice, and the roster shows max HP only. Calibration migrates on upgrade." },
     { version: "0.24.0", note: "Bug fix: settings saved by older versions no longer stick (version migrations now reset corrected sections, so the 0.23.0 rank mapping + promotion bonus actually apply on upgrade); imports from old export files migrate too." },
@@ -94,6 +95,7 @@
     "Heavy weapons",
     "Rocketeer",
     "Specialist",
+    "Reserve", // the game's "no loadout assigned" state; appears in real saves
   ];
 
   /*

@@ -211,8 +211,14 @@
     XS.settings.saveSettings(st2, s);
     const loaded2 = XS.settings.loadSettings(st2);
     t.equal(loaded2.calibration.rank.kind, "experience", "same-version settings untouched (kind survives; inert keys merge from defaults)");
-    // an old export file migrates on import too
-    const oldExport = JSON.stringify({ app: "xenosquad-web", version: "0.22.0", settings: { calibration: { rank: { kind: "none" } } } });
+    // an old export file migrates on import too (real exports carry full settings)
+    const oldExport = JSON.stringify({
+      app: "xenosquad-web", version: "0.22.0",
+      settings: {
+        format: XS.settings.defaultSettings().format,
+        calibration: { statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 }, currentHP: { kind: "float" }, rank: { kind: "none" } },
+      },
+    });
     const imp = XS.settings.deserialize(oldExport);
     t.ok(imp.ok);
     t.deepEqual(imp.settings.calibration.rank, { kind: "postInt", index: 0 }, "old export migrated on import");

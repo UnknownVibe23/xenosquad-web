@@ -182,6 +182,12 @@
     settings.calibration.rank = { kind: "experience" };
     const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
     t.equal(res2.soldiers[1].rank, 2, "experience.tst2 -> rank 2");
+    // rank from an after-stats int (postInt) — exposed raw for calibration
+    const fx = XS.fixture.buildFixtureSave({ seed: 39, soldiers: 6 });
+    settings.calibration.rank = { kind: "postInt", index: 0 };
+    const res3 = XS.parser.parseSaveWithSettings(bufferOf(fx.bytes), settings);
+    t.equal(res3.soldiers[2].rank, fx.spec.soldiers[2].postInts[0], "rank from post-stat int #0");
+    t.ok(res3.soldiers[0].raw.postInts.length >= 10, "postInts exposed in raw record");
   });
 
   test("calibration: full pipeline on the fixture gives wound status per soldier", (t) => {

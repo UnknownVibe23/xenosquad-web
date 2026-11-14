@@ -243,6 +243,14 @@
       if (Number.isFinite(f) && f > 0.01 && f < 100000) hpFloat = f;
     }
     if (hpFloat == null && rawFloats.length > 0) hpFloat = rawFloats[0].value;
+    /*
+     * The small ints between the stats and the float (and just after it) are
+     * candidate fields for things like missions/kills/rank — not certainly
+     * identified, so they are exposed raw (postInts) for the Calibrate tab
+     * instead of being interpreted here.
+     */
+    const postInts = [];
+    for (let k = 0; k < 12 && off + 4 * k + 4 <= bytes.length; k++) postInts.push(readInt32(view, off + 4 * k));
 
     // --- anchored strings in the window up to the next marker
     const windowStart = off;
@@ -303,6 +311,7 @@
       statInts,
       rawFloats,
       hpFloat,
+      postInts,
       inTeam,
       strings,
     };
@@ -392,6 +401,9 @@
       const m = /(\d+)\s*$/.exec(raw.strings.experience || "");
       rank = m ? parseInt(m[1], 10) : 0;
       rankKind = "experience";
+    } else if (rk.kind === "postInt" && Number.isInteger(rk.index) && raw.postInts && rk.index >= 0 && rk.index < raw.postInts.length) {
+      rank = raw.postInts[rk.index];
+      rankKind = "postInt";
     }
     return XS.domain.makeSoldier({
       id: "soldier-" + raw.index,
@@ -407,7 +419,7 @@
       regiment: raw.strings.regiment,
       experience: raw.strings.experience,
       loadout: raw.strings.loadout,
-      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, markerOffset: raw.markerOffset, rankKind },
+      raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
     });
   }
 

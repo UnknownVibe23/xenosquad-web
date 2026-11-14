@@ -36,10 +36,10 @@ No build step is needed: the deployed site is exactly the files in this repo.
 
 ## Using the app
 
-1. Find your save: on Linux via Heroic + Proton it is typically
-   `drive_c/users/steamuser/Documents/Xenonauts/` inside the Wine prefix (e.g.
-   `~/.config/heroic/wineprefixes/<name>/...`). Use a dedicated save slot that produces
-   `planner.sav`.
+1. Find the save file your game writes: any `.sav` from your save slots (a dedicated slot
+   producing `planner.sav` is handy). It sits in the Xenonauts save folder
+   `Documents/Xenonauts/` — under Windows your user Documents folder; through Proton/Wine it
+   is `drive_c/users/<user>/Documents/Xenonauts/` inside the Wine prefix.
 2. Drag the `.sav` anywhere onto the page (or use the file picker; the `accept=".sav"`
    attribute is only a hint — content is verified by scanning for the `SoldierFlags` marker).
 3. The **Squad** tab shows the parsed squad request; the **Soldiers** tab shows the roster;

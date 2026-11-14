@@ -119,6 +119,36 @@
     t.notOk(plan2.notices.some((n) => /recruitable/.test(n)));
   });
 
+  test("assignment: scales to a large roster and squad — no hardcoded limits anywhere", (t) => {
+    // 60 soldiers, every 4th a recruit -> 45 team / 15 recruits; 15 seats.
+    const { bytes } = XS.fixture.buildFixtureSave({ seed: 909, soldiers: 60, recruitEvery: 4 });
+    const settings = XS.settings.defaultSettings();
+    settings.global.woundedThreshold = 0;
+    const res = XS.parser.parseSaveWithSettings(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), settings);
+    t.equal(res.soldiers.length, 60, "parser finds all 60 markers");
+    t.equal(res.soldiers.filter((s) => s.inTeam).length, 45, "team size is not hardcoded");
+    t.equal(res.soldiers.filter((s) => !s.inTeam).length, 15, "recruit pool size is not hardcoded");
+    settings.seats = Array.from({ length: 15 }, (_, i) => ["rifleman", "sniper", "assault", "breacher", "mg", "scout"][i % 6]);
+    const t0 = Date.now();
+    const plan = XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax });
+    const dt = Date.now() - t0;
+    t.equal(plan.picks.length, 15, "seat count is not hardcoded (15 seats)");
+    const picked = plan.picks.filter((p) => p && p.soldier);
+    t.equal(new Set(picked.map((p) => p.soldier.id)).size, picked.length, "no double-booking at scale");
+    t.ok(picked.every((p) => p.soldier.inTeam), "recruits still excluded by default");
+    t.ok(dt < 5000, "60x15 Hungarian solve is fast (" + dt + "ms)");
+    // without floors every seat must be fillable from the 45 team soldiers
+    const noFloors = XS.settings.defaultSettings();
+    noFloors.global.woundedThreshold = 0;
+    noFloors.roles = noFloors.roles.map((r) => XS.domain.makeRole(Object.assign({}, r, { floors: {}, kitWeight: 0 })));
+    noFloors.seats = settings.seats;
+    const res2 = XS.parser.parseSaveWithSettings(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), noFloors);
+    const plan2 = XS.scoring.planSquad(res2.soldiers, noFloors, { solver: XS.hungarian.hungarianMax });
+    t.equal(plan2.picks.filter((p) => p && p.soldier).length, 15, "all 15 seats filled when everyone is eligible");
+    // determinism at scale
+    t.deepEqual(plan, XS.scoring.planSquad(res.soldiers, settings, { solver: XS.hungarian.hungarianMax }));
+  });
+
   test("assignment: rank tie-breaker decides exact ties through the pipeline", (t) => {
     // identical stats, different rank: the higher rank gets the single seat
     const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, kitWeight: 0 });

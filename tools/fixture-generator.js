@@ -146,7 +146,13 @@
       w.u8(0); // flag byte
       w.str(shortNat);
       for (const v of statInts) w.i32(v);
-      for (let k = 0; k < 40; k++) w.u8(0); // zero padding run (float lands at stats-end + 40, 4-aligned)
+      // ten small ints between the stats and the float (float lands at
+      // stats-end + 40, 4-aligned). Recruits get zeros; team soldiers get
+      // plausible mission/kill-ish counters so Calibrate has raw candidates.
+      const postInts = isRecruit
+        ? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        : [1 + (i % 9), i % 3, 1, 1, 30 + (i % 40), 0, 0, 0, 0, 0];
+      for (const v of postInts) w.i32(v);
       w.f32(hpFloat); // the one float among the padding (current HP)
       w.str(regiment);
       w.str(experience);
@@ -178,7 +184,7 @@
       }
 
       spec.soldiers.push({
-        name, nationality, portrait, portraitIndex, statInts, hpFloat, role, regiment, experience,
+        name, nationality, portrait, portraitIndex, statInts, hpFloat, postInts, role, regiment, experience,
         loadout: isRecruit ? [] : [weapon, ammo, weapon, grenade],
         seat: isRecruit ? null : seat,
         inTeam: !isRecruit,

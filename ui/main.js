@@ -150,6 +150,17 @@
   function boot() {
     document.getElementById("app-version").textContent = XS.domain.APP_VERSION;
     document.getElementById("repo-link").setAttribute("href", XS.domain.REPO_URL);
+    // if a script failed to load, say so clearly instead of throwing later
+    const missing = ["domain", "parser", "hungarian", "scoring", "settings", "dom"].filter((m) => !XS[m]);
+    if (missing.length > 0) {
+      document.getElementById("tab-content").appendChild(
+        XS.dom.h("section", { class: "panel error" }, [
+          XS.dom.h("h2", { text: "Scripts failed to load" }),
+          XS.dom.h("p", { text: "Missing modules: " + missing.join(", ") + ". The page must be served as-is (all files present); check the browser console for the failing file." }),
+        ])
+      );
+      return;
+    }
     setupDropZone();
     rerender();
   }

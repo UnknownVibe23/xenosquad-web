@@ -46,11 +46,16 @@
       ...Array.from({ length: statCount }, (_, i) => option(i, "slot " + i, cal.currentHP.kind === "slot" && cal.currentHP.slot === i)),
     ]);
 
+    const postCount = (state.roster && state.roster[0] && state.roster[0].raw && state.roster[0].raw.postInts ? state.roster[0].raw.postInts.length : 10);
     const rankSelect = h("select", {
       on: {
         change: (e) => {
           const v = e.target.value;
-          cal.rank = v === "none" ? { kind: "none" } : v === "experience" ? { kind: "experience" } : { kind: "slot", slot: parseInt(v, 10) };
+          cal.rank =
+            v === "none" ? { kind: "none" }
+            : v === "experience" ? { kind: "experience" }
+            : v.indexOf("post") === 0 ? { kind: "postInt", index: parseInt(v.slice(4), 10) }
+            : { kind: "slot", slot: parseInt(v, 10) };
           app.settingsChanged();
         },
       },
@@ -58,6 +63,7 @@
       option("none", "— not locatable —", cal.rank.kind === "none"),
       option("experience", "number in the experience.* string", cal.rank.kind === "experience"),
       ...Array.from({ length: statCount }, (_, i) => option(i, "slot " + i, cal.rank.kind === "slot" && cal.rank.slot === i)),
+      ...Array.from({ length: postCount }, (_, i) => option("post" + i, "after-stats int #" + i, cal.rank.kind === "postInt" && cal.rank.index === i)),
     ]);
 
     const controls = h("section", { class: "panel" }, [
@@ -81,26 +87,32 @@
       return;
     }
 
-    const raw = state.roster[0].raw || { statInts: [] };
+    const raw0 = state.roster[0].raw || { statInts: [], postInts: [] };
+    const postCount2 = raw0.postInts ? raw0.postInts.length : 0;
     const headCells = [h("th", { text: "Soldier" })];
     for (let i = 0; i < statCount; i++) headCells.push(h("th", { text: "slot " + i }));
     headCells.push(h("th", { text: "float" }));
+    for (let i = 0; i < postCount2; i++) headCells.push(h("th", { text: "post#" + i, title: "int after the stats #" + i + " (candidate for missions/kills/rank)" }));
 
     const rows = state.roster.map((s) => {
-      const r = s.raw || { statInts: [], hpFloat: null };
+      const r = s.raw || { statInts: [], hpFloat: null, postInts: [] };
       const cells = [h("td", { text: s.name })];
       for (let i = 0; i < statCount; i++) {
         const mapped = XS.domain.STATS.find((st) => state.settings.calibration.statSlots[st] === i);
         cells.push(h("td", { class: "num" + (mapped ? " mapped" : ""), text: r.statInts[i] != null ? String(r.statInts[i]) : "—", title: mapped ? "mapped to " + mapped : "" }));
       }
       cells.push(h("td", { class: "num", text: r.hpFloat != null ? String(Math.round(r.hpFloat * 100) / 100) : "—" }));
+      for (let i = 0; i < postCount2; i++) {
+        const isRank = cal.rank.kind === "postInt" && cal.rank.index === i;
+        cells.push(h("td", { class: "num" + (isRank ? " mapped" : ""), text: r.postInts && r.postInts[i] != null ? String(r.postInts[i]) : "—", title: isRank ? "mapped to rank" : "" }));
+      }
       return h("tr", {}, cells);
     });
 
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Raw values per soldier (" + state.roster.length + ")" }),
-        h("p", { class: "muted", text: "Highlighted slots are currently mapped to a stat. The float column is the single float found in the zero padding after the stats." }),
+        h("p", { class: "muted", text: "Highlighted slots are currently mapped to a stat. The float column is the float in the padding after the stats (current HP). The post# columns are the small ints between the stats and the float — not certainly identified (candidates for missions/kills/rank), so they are only used if you map rank to one." }),
         h("div", { class: "table-wrap" }, [h("table", { class: "roster" }, [h("thead", {}, [h("tr", {}, headCells)]), h("tbody", {}, rows)])]),
       ])
     );

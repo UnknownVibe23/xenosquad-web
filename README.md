@@ -1,0 +1,81 @@
+# xenosquad-web
+
+A squad planner for **Xenonauts 1** (Goldhawk Interactive, 2014) that runs entirely in your
+browser as a static website. Drag a save file onto the page, get the mathematically optimal
+soldier-to-role assignment for a configurable set of squad seats.
+
+## Privacy — the headline feature
+
+- **No backend, no uploads.** The save file is opened with the browser File API and parsed
+  locally in memory. There is nowhere for it to be uploaded to.
+- **No analytics, no cookies, no external requests of any kind** — no fonts, images, scripts
+  or fetches from CDNs. The page carries a strict `Content-Security-Policy` meta tag
+  (`connect-src 'none'`, `script-src 'self'`, …) that makes any network request impossible.
+- **Settings only** are stored, in `localStorage` under the `xenosquad-web.` prefix. The
+  soldier roster (names are personal data) is **never** persisted — it lives in memory for
+  the session only. Use **Clear all my data** (Settings tab) to wipe the namespace.
+
+## Running it
+
+The site is plain HTML/CSS/JS with **zero dependencies and zero build step**:
+
+- open `index.html` directly from the filesystem (`file://` works — classic scripts, not ES
+  modules, are used for exactly this reason), or
+- serve the folder with any static server, or
+- publish it on **GitHub Pages** (below).
+
+### Publishing on GitHub Pages
+
+1. Push this repository to GitHub.
+2. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a
+   branch**.
+3. Pick the branch (e.g. `main`) and folder **`/` (root)**, then Save.
+4. GitHub builds the site at `https://<owner>.github.io/xenosquad-web/` (a few minutes).
+
+No build step is needed: the deployed site is exactly the files in this repo.
+
+## Using the app
+
+1. Find your save: on Linux via Heroic + Proton it is typically
+   `drive_c/users/steamuser/Documents/Xenonauts/` inside the Wine prefix (e.g.
+   `~/.config/heroic/wineprefixes/<name>/...`). Use a dedicated save slot that produces
+   `planner.sav`.
+2. Drag the `.sav` anywhere onto the page (or use the file picker; the `accept=".sav"`
+   attribute is only a hint — content is verified by scanning for the `SoldierFlags` marker).
+3. The **Squad** tab shows the parsed squad request; the **Soldiers** tab shows the roster;
+   **Roles** is your doctrine editor; **Settings** holds global parameters, export/import and
+   reset; **Calibrate** maps raw save slots to the six stats; **Help** documents everything.
+
+## Save format notes (verified against a real `planner.sav`)
+
+Binary serialization: 4-byte LE length + ASCII bytes for strings, 4-byte LE int32, 4-byte
+LE IEEE-754 float; `FF FF FF FF` is -1/null. Soldier records are located by scanning for the
+ASCII marker `SoldierFlags` (once per soldier). A record contains the nationality, full name,
+portrait string + int, the marker, a short nationality string, then **twelve** int32 stat
+values (six stats, each appearing twice — current and base), a zero-padding run containing
+one float (observed ~41 bytes after the stats; plausibly current HP against the 6th stat as
+max HP — confirm in the **Calibrate** tab), then `regiment.*`, `experience.*`, the in-game
+equipment role string, `armour.*` and loadout strings. The header stores the save name and
+in-game date. All offsets/counts are settings, never hardcoded.
+
+## Testing
+
+- **Browser (canonical):** open `tests/tests.html` — runs the whole suite and prints
+  pass/fail per test. No server needed.
+- **Node (convenience):** `node --test tests/node/` runs the same suite headlessly.
+
+Tests are hand-written and zero-dependency. Save-file test input is **synthetic**: generate it
+with `node tools/make-fixture.js` (writes `fixtures/synthetic-planner.sav`, invented names
+like "Test Soldier 1"). Never commit a real save or real soldier names.
+
+## Architecture
+
+- `parser/` — binary save extraction (pure: buffer in, data out)
+- `domain/` — plain-object models (Soldier, Role, SquadTemplate) + version constant
+- `scoring/` — exclusions, normalization, role scoring, assignment; `scoring/hungarian.js`
+  is the hand-written Kuhn–Munkres solver
+- `settings/` — defaults, validation, merge, export/import, localStorage (storage injected)
+- `ui/` — rendering only; logic modules never touch the DOM
+- `tests/`, `tools/` — test suite + synthetic fixture generator
+
+All logic modules are importable by Node without a DOM.

@@ -1,0 +1,207 @@
+/*
+ * style.css — xenosquad-web base styles.
+ *
+ * Layout goals: a single centered column that stays comfortable on a
+ * vertical monitor (1080x1920) and never requires horizontal page scrolling
+ * in a narrow viewport. Everything uses fluid widths and minmax(0, 1fr)
+ * grids so panels stack instead of overflowing.
+ */
+
+:root {
+  --bg: #10141a;
+  --panel: #1a212b;
+  --panel-alt: #222b38;
+  --border: #33405252;
+  --text: #dde5ee;
+  --muted: #93a1b3;
+  --accent: #6fc3ff;
+  --accent-2: #9be29b;
+  --danger: #ff8f8f;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+}
+
+.app-header {
+  padding: 0.75rem 1rem 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  margin: 0.15rem 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.tab.active {
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.app-footer a { color: var(--accent); }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.panel h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.panel.error {
+  border-color: var(--danger);
+  color: #ffd7d7;
+}
+
+.panel.muted { color: var(--muted); }
+
+.placeholder { color: var(--muted); font-style: italic; }
+
+.button-like {
+  display: inline-block;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+button {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+button.primary {
+  background: #2b4a63;
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+input[type="text"], input[type="number"], select, textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.9rem;
+  max-width: 100%;
+}
+
+table.kv { border-collapse: collapse; width: 100%; }
+table.kv th, table.kv td {
+  text-align: left;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  word-break: break-word;
+}
+table.kv th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+/* full-page drop overlay */
+#drop-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 16, 24, 0.82);
+  border: 4px dashed var(--accent);
+  z-index: 50;
+  pointer-events: none;
+  font-size: 1.4rem;
+  color: var(--accent);
+  text-align: center;
+  padding: 1rem;
+}
+
+#drop-overlay.visible { display: flex; }
+
+/* narrow / vertical monitors: everything stacks, no horizontal page scroll */
+@media (max-width: 700px) {
+  .tab-content { padding: 0.6rem; }
+  .app-header h1 { font-size: 1.15rem; }
+  .panel { padding: 0.75rem; }
+}

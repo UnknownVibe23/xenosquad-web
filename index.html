@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    Privacy by construction: this policy forbids every network fetch
+    (connect-src 'none'), all remote scripts/styles/images, inline scripts,
+    and forms posting anywhere. The app is fully static and offline.
+  -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <title>xenosquad-web — Xenonauts 1 squad planner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>xenosquad-web</h1>
+    <p class="tagline">Xenonauts 1 squad planner — 100% local, no server, no uploads</p>
+    <nav id="tab-bar" class="tab-bar" aria-label="Main tabs"></nav>
+  </header>
+
+  <main id="tab-content" class="tab-content"></main>
+
+  <footer class="app-footer">
+    <span>xenosquad-web</span>
+    <span>version <span id="app-version"></span></span>
+    <a id="repo-link" href="https://github.com/UnknownVibe23/xenosquad-web">source repository</a>
+  </footer>
+
+  <!-- full-page drag-and-drop overlay -->
+  <div id="drop-overlay" aria-hidden="true"><div>Drop your Xenonauts .sav file anywhere</div></div>
+
+  <!-- classic scripts (not ES modules) so the page also works from file:// -->
+  <script src="domain/models.js"></script>
+  <script src="parser/saveParser.js"></script>
+  <script src="settings/store.js"></script>
+  <script src="ui/dom.js"></script>
+  <script src="ui/tabs-squad.js"></script>
+  <script src="ui/main.js"></script>
+</body>
+</html>

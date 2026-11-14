@@ -28,3 +28,5 @@ require("../../tools/fixture-generator.js");
 // the same test files the browser page loads
 require("../parser.test.js");
 require("../scoring.test.js");
+require("../hungarian.test.js");
+require("../assignment.test.js");

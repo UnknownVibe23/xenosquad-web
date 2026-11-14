@@ -133,7 +133,12 @@
       main.appendChild(h("section", { class: "panel muted" }, [h("p", { text: "Load a save file to plan a squad." })]));
       return;
     }
-    const result = XS.scoring.planSquad(state.roster, state.settings, { seats: state.settings.seats });
+    // One global assignment, solved optimally by the hand-written Hungarian
+    // algorithm (Kuhn-Munkres) — never greedy per-seat picking.
+    const result = XS.scoring.planSquad(state.roster, state.settings, {
+      seats: state.settings.seats,
+      solver: XS.hungarian.hungarianMax,
+    });
     const pickCards = result.picks.map((p) => {
       if (!p) return h("div", { class: "pick empty" }, [h("span", { text: "— empty seat —" })]);
       if (!p.soldier) {
@@ -159,7 +164,7 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
-        h("h2", { text: "3 · Suggested squad (provisional greedy — replaced by the Hungarian solver in milestone 4)" }),
+        h("h2", { text: "3 · Suggested squad (optimal assignment via the Hungarian algorithm)" }),
         ...result.notices.map((n) => h("p", { class: "notice", text: n })),
         h("div", { class: "pick-grid" }, pickCards),
       ])

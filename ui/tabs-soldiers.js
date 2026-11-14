@@ -33,6 +33,12 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Roster: " + state.roster.length + " soldiers (" + state.roster.filter((s) => s.inTeam !== false).length + " in team, " + state.roster.filter((s) => s.inTeam === false).length + " recruitable)" }),
+        (state.anomalies || []).length > 0
+          ? h("div", { class: "note-box warn-box" }, [
+              h("p", { class: "note-inline", text: "Warning: this file failed " + state.anomalies.length + " sanity check(s) and may not be a vanilla Xenonauts 1 save; the numbers below may be wrong (see the Squad tab banner)." }),
+              ...(state.anomalies || []).slice(0, 5).map((a) => h("p", { class: "note-inline", text: a })),
+            ])
+          : null,
         (state.notices || []).length > 0 ? h("div", { class: "note-box" }, (state.notices || []).map((n) => h("p", { class: "note-inline", text: "Note: " + n }))) : null,
         h("ul", { class: "legend" }, [
           h("li", { text: "badge = team member (with transport seat, e.g. Charlie - 1/13) or recruit (recruitment pool)" }),

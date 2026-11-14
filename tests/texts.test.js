@@ -25,6 +25,11 @@
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(buf, settings);
     res.notices.forEach((n) => t.notOk(hasDash(n), "notice: " + n.slice(0, 40)));
+    // sanity anomalies on a deliberately weird save (absurd rank points) must be em-dash-free too
+    const wb = XS.fixture.buildFixtureSave({ seed: 72, soldiers: 5, rankPoints: 999999 }).bytes;
+    const wbuf = wb.buffer.slice(wb.byteOffset, wb.byteOffset + wb.byteLength);
+    const weird = XS.parser.parseSaveWithSettings(wbuf, settings);
+    (weird.anomalies || []).forEach((a) => t.notOk(hasDash(a), "anomaly: " + a.slice(0, 40)));
     t.notOk(hasDash(XS.parser.inspectSave(new ArrayBuffer(8)).error), "small-file error");
     t.notOk(hasDash(XS.parser.inspectSave(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).buffer).error), "no-marker error");
     // planSquad notices + why lines in every recruit mode

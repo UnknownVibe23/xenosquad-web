@@ -34,6 +34,18 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
+        h("h2", { text: "Which save files work" }),
+        h("ul", {}, [
+          h("li", { text: "Supported: vanilla Xenonauts 1, final GOG/Steam build (1.06). Every real save inspected so far has the identical header (\"onex\", version 256) and soldier-block layout, and the game has had no patches since 2017, so the vanilla format is stable." }),
+          h("li", { text: "Xenonauts: Community Edition (X:CE) saves written with saveCompatibility=\"gh15x\" in assets/gameconfig.xml are meant to match the vanilla layout and should work. Plain X:CE or heavily modded saves can differ." }),
+          h("li", { text: "On load the app sanity-checks what it parsed (header magic/version, stat value ranges, rank points, role strings, team marker; thresholds in the settings). If anything looks implausible, a prominent warning appears on the Squad and Soldiers tabs, because wrong numbers are worse than a warning." }),
+          h("li", { text: "Which file to drop: any .sav from a save slot, Quicksave or Autosave, preferably taken on the geoscape (ground-combat saves were the crash-prone ones in vanilla). The save folder is Documents/Xenonauts/ in the user's Documents folder; through Proton/Wine that is drive_c/users/<user>/Documents/Xenonauts/ inside the Wine prefix, and on the native Linux port ~/.local/share/Goldhawk Interactive/Xenonauts/." }),
+        ]),
+      ])
+    );
+
+    main.appendChild(
+      h("section", { class: "panel" }, [
         h("h2", { text: "Recruits & wounded soldiers" }),
         h("ul", {}, [
           h("li", { text: "The save holds your active team AND the recruitment pool: a block with a weapon.* string is in your team; recruits carry armour only. The Soldiers tab badges each one (team seat like \"Charlie - 1/13\", or recruit)." }),

@@ -20,7 +20,7 @@
  *     int32 values (in the inspected saves: TWELVE ints = six stats, each
  *     appearing twice — first copy current, second copy base), a run of zero
  *     padding with one float among it (at stats-end + hpFloatOffset, i.e. 40
- *     bytes in; it is the current HP as a float), then anchored strings:
+ *     bytes in; NOT current HP, verified), then anchored strings:
  *     "regiment.*", "experience.*", an optional transport-seat string
  *     ("Charlie - 1/13"), the in-game equipment role ("Rifleman", ...),
  *     "armour.*", and loadout strings ("weapon.*", "ammo.*",
@@ -457,11 +457,105 @@
     });
   }
 
+  function isObj(v) {
+    return v != null && typeof v === "object" && !Array.isArray(v);
+  }
+
+  /*
+   * Load-time sanity thresholds (defaults; adjustable via settings.format.sanity).
+   * WHAT/WHY: the marker scan finds soldier blocks in any file that contains
+   * the marker, but a save from a DIFFERENT build (Xenonauts: Community
+   * Edition without saveCompatibility, heavy mods) or a corrupted file can
+   * have the same marker with different bytes after it. Parsing would then
+   * "succeed" with garbage stats. So after parsing we check the result against
+   * what real vanilla Xenonauts 1 data must look like, and return human-readable
+   * anomaly strings the UI shows as a prominent warning: wrong numbers must
+   * never appear silently.
+   */
+  const SANITY_DEFAULTS = {
+    headerMagic: "onex", // 4-byte magic at file start (every real save inspected)
+    headerVersion: 256, // int32 right after the magic (vanilla 1.06 writes 256)
+    statMin: 0, // plausible range of one raw stat int (real stats are ~20..150)
+    statMax: 500,
+    rankMax: 10000, // rank points are small non-negative ints
+    maxAnomalies: 8, // cap on the warning list; the rest are only counted
+  };
+
+  /*
+   * sanityCheck(res, settings): validate a parseSaveWithSettings result.
+   * Pure and defensive: never throws, even on fuzzed records; returns a list
+   * of anomaly strings (empty = the save looks like a normal vanilla save).
+   */
+  function sanityCheck(res, settings) {
+    if (!res || !res.ok) return [];
+    const format = isObj(res.format) ? res.format : isObj(settings && settings.format) ? settings.format : {};
+    const cal = isObj(settings && settings.calibration) ? settings.calibration : {};
+    const san = Object.assign({}, SANITY_DEFAULTS, isObj(format.sanity) ? format.sanity : {});
+    const cap = Number.isInteger(san.maxAnomalies) && san.maxAnomalies > 0 ? san.maxAnomalies : SANITY_DEFAULTS.maxAnomalies;
+    const out = [];
+    let overflow = 0;
+    const add = (msg) => {
+      if (out.length < cap) out.push(msg);
+      else overflow++;
+    };
+
+    const header = res.header || {};
+    if (typeof san.headerMagic === "string" && san.headerMagic.length > 0 && header.magic !== san.headerMagic) {
+      add('Header magic is "' + String(header.magic) + '", but a vanilla Xenonauts 1 save starts with "' + san.headerMagic + '".');
+    }
+    if (Number.isFinite(san.headerVersion) && header.version != null && header.version !== san.headerVersion) {
+      add("Header save-version int is " + header.version + "; vanilla Xenonauts 1 (build 1.06) writes " + san.headerVersion + ".");
+    }
+    if (Array.isArray(res.recordErrors) && res.recordErrors.length > 0) {
+      add(res.recordErrors.length + " soldier block(s) could not be read at all (corrupt or truncated record).");
+    }
+
+    // per-soldier checks, aggregated so 22 bad blocks produce one line, not 22
+    const slots = isObj(cal.statSlots) ? cal.statSlots : {};
+    const soldiers = Array.isArray(res.soldiers) ? res.soldiers : [];
+    let badStats = 0, statExample = "";
+    let badRank = 0, rankExample = "";
+    let nullRole = 0;
+    let seatNoTeam = 0;
+    for (const s of soldiers) {
+      const raw = isObj(s.raw) ? s.raw : {};
+      const ints = Array.isArray(raw.statInts) ? raw.statInts : [];
+      for (const st of XS.domain.STATS) {
+        const slot = slots[st];
+        if (!Number.isInteger(slot) || slot < 0 || slot >= ints.length) continue;
+        const v = ints[slot];
+        if (typeof v !== "number" || !Number.isFinite(v) || v < san.statMin || v > san.statMax) {
+          badStats++;
+          if (!statExample) statExample = (s.name || "soldier") + " " + st + "=" + String(v);
+        }
+      }
+      if (typeof s.rank === "number" && (!Number.isFinite(s.rank) || s.rank < 0 || s.rank > san.rankMax)) {
+        badRank++;
+        if (!rankExample) rankExample = (s.name || "soldier") + " rank points=" + String(s.rank);
+      }
+      if (s.equipmentRole == null) nullRole++;
+      if (s.seat && s.inTeam === false) seatNoTeam++;
+    }
+    if (badStats > 0) add(badStats + " stat value(s) outside the plausible range " + san.statMin + ".." + san.statMax + " (first: " + statExample + "); the stat block may be misaligned in this file.");
+    if (badRank > 0) add(badRank + " rank point value(s) outside 0.." + san.rankMax + " (first: " + rankExample + ").");
+    if (soldiers.length > 0 && nullRole === soldiers.length) add("No in-game equipment-role string was found in any soldier block (expected one of: " + (Array.isArray(format.roleNames) ? format.roleNames.join(", ") : "Rifleman, Assault, ...") + ").");
+    if (seatNoTeam > 0) add(seatNoTeam + ' soldier(s) have a transport seat but no "' + (format.teamStringPrefix || "weapon.") + '" string (team detection is inconsistent in this file).');
+    const prefix = typeof format.teamStringPrefix === "string" ? format.teamStringPrefix : "";
+    if (prefix && soldiers.length > 0 && soldiers.every((s) => s.inTeam === false)) {
+      add('No soldier block contains a "' + prefix + '" string, so active team and recruitment pool could not be told apart.');
+    }
+    // the overflow summary always fits, even when the list is at its cap
+    if (overflow > 0) out.push("... and " + overflow + " more warning(s).");
+    return out;
+  }
+
   /*
    * Parse a save and calibrate every soldier with the site's settings.
-   * Returns { ok, error, header, markerCount, soldiers, recordErrors, notices }.
+   * Returns { ok, error, header, markerCount, soldiers, recordErrors, notices, anomalies }.
    * Notices flag domain fields we could not locate (e.g. rank), so the UI
    * can disable the dependent feature visibly instead of inventing values.
+   * Anomalies are the load-time sanity warnings (see sanityCheck): a non-empty
+   * list means the file may not be a vanilla Xenonauts 1 save.
    */
   function parseSaveWithSettings(buffer, settings) {
     const res = parseSave(buffer, settings.format);
@@ -492,15 +586,18 @@
       notices.push("No current-HP value was found in the soldier blocks, so the wounded check is skipped. Check the 'current HP' mapping in the Calibrate tab.");
     }
     if (recruitHpNulled) notices.push("Recruitable soldiers are at full HP in-game; the float in their save block is a different field, so their current HP is shown as unknown and they are never treated as wounded.");
-    return Object.assign({}, res, { soldiers, notices });
+    const anomalies = sanityCheck(Object.assign({}, res, { soldiers }), settings);
+    return Object.assign({}, res, { soldiers, notices, anomalies });
   }
 
   return {
     DEFAULT_FORMAT,
     ANCHOR_PREFIXES,
+    SANITY_DEFAULTS,
     inspectSave,
     parseSave,
     calibrateSoldier,
+    sanityCheck,
     parseSaveWithSettings,
     // exposed for tests and later milestones:
     _internals: { toBytes, ascii, isPrintable, readInt32, readFloat32, readString, readStringEndingAt, findAll, parseHeader, extractRecord },

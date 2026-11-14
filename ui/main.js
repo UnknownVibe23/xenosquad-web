@@ -38,6 +38,7 @@
     lastFileName: null,
     error: null,
     notices: [],
+    anomalies: [], // load-time sanity warnings (save may not be vanilla Xenonauts 1)
   };
 
   function persistSettings() {
@@ -56,9 +57,11 @@
       state.error = null;
       state.roster = res.soldiers || [];
       state.notices = res.notices || [];
+      state.anomalies = res.anomalies || [];
     } else {
       state.error = res.error;
       state.roster = null;
+      state.anomalies = [];
     }
   }
 
@@ -113,10 +116,12 @@
         if (!res.ok) {
           state.error = res.error;
           state.roster = null;
+          state.anomalies = [];
         } else {
           state.error = null;
           state.roster = res.soldiers || [];
           state.notices = res.notices || [];
+          state.anomalies = res.anomalies || [];
           state.activeTab = "squad";
         }
         rerender();

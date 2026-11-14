@@ -105,10 +105,21 @@ still reads the mapping and all format parameters from the settings object, so n
 deleted: to re-expose the UI after a hypothetical future build, re-add the `calibrate` entry to
 `TABS` in `ui/main.js`, the `ui/tabs-calibrate.js` script tag in `index.html`, and add a
 format-parameters section back to `ui/tabs-settings.js` (the `settings.format` object still
-carries marker/statCount/hpFloatOffset/stringScanBytes/teamStringPrefix/recruitHpIsFloat and is
+carries marker/statCount/hpFloatOffset/stringScanBytes/teamStringPrefix/sanity and is
 what the parser reads). If more save files ever show
 a different layout, share one (as `.txt`, never committed) and we decide then whether to bring the
 calibration UI back.
+
+**Supported saves / reliability.** Vanilla Xenonauts 1 (final 1.06 GOG/Steam build) is the verified
+target: every real save inspected so far has the identical header (`onex`, version 256) and
+soldier-block layout, Goldhawk stated the patches did not break saves, and the game has been in
+maintenance mode since 2017, so no vanilla format change is expected. X:CE saves written with
+`saveCompatibility="gh15x"` in `assets/gameconfig.xml` are meant to match the vanilla layout and
+should work; plain X:CE or heavily modded saves can differ. On load the app runs a sanity check over
+the parsed values (header magic/version, stat value ranges, rank points, role strings, team marker;
+thresholds live in `settings.format.sanity`) and shows a prominent warning when a file looks
+different, instead of silently showing wrong numbers. Prefer geoscape saves (save slot / Quicksave /
+Autosave) over saves taken mid-ground-combat, which were the crash-prone ones in vanilla.
 
 ## Testing
 

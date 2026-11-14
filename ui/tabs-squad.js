@@ -48,6 +48,26 @@
     ]);
   }
 
+  /*
+   * Prominent banner when the loaded file failed the load-time sanity checks
+   * (parser.sanityCheck): a Community Edition / modded / corrupted save can
+   * contain the SoldierFlags marker with a different layout after it, and we
+   * must never show silently wrong numbers.
+   */
+  function renderAnomalyBanner(main, state) {
+    const anomalies = state.anomalies || [];
+    if (anomalies.length === 0) return;
+    main.appendChild(
+      h("section", { class: "panel warn" }, [
+        h("h2", { text: "This file may not be a vanilla Xenonauts 1 save" }),
+        h("p", {
+          text: "The parsed values failed " + anomalies.length + " sanity check(s), so the numbers below may be wrong. Vanilla GOG/Steam saves (header \"onex\", version 256) parse correctly; saves from Xenonauts: Community Edition (without saveCompatibility \"gh15x\") or heavy mods can have a different soldier-block layout. See Help for details.",
+        }),
+        h("ul", { class: "bench" }, anomalies.map((a) => h("li", { text: a }))),
+      ])
+    );
+  }
+
   function renderInspector(main, state) {
     const info = state.parseInfo;
     if (state.error) {
@@ -66,6 +86,7 @@
       ["In-game date (header)", header.gameDate || "n/a"],
       ['Marker "' + (info.format ? info.format.marker : "SoldierFlags") + '" occurrences', String(info.markerCount)],
       ["Soldier blocks found", String((info.soldiers || []).length)],
+      ["Sanity warnings", String((state.anomalies || []).length) + ((state.anomalies || []).length > 0 ? " (this file may not be a vanilla Xenonauts 1 save)" : "")],
     ];
     main.appendChild(
       h("details", { class: "panel inspect" }, [
@@ -352,6 +373,7 @@
    */
   function renderSquad(main, state) {
     renderLoadPanel(main, state);
+    renderAnomalyBanner(main, state);
     renderSeatBuilder(main, state);
     renderResult(main, state);
     renderTemplates(main, state);

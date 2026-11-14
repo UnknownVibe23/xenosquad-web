@@ -43,6 +43,11 @@
         stringScanBytes: 2048, // window after the stats for anchored strings; wide enough that repeated loadout strings are not truncated at the edge
         teamStringPrefix: "weapon.", // block containing such a string = active team (recruits have armour only)
         roleNames: XS.domain.EQUIPMENT_ROLES.slice(),
+        // load-time sanity thresholds used by parser.sanityCheck (a save that
+        // fails them may not be a vanilla Xenonauts 1 save and gets a visible
+        // warning); defaults live in the parser, mirrored here so they merge
+        // and persist with the other format parameters
+        sanity: XS.parser && XS.parser.SANITY_DEFAULTS ? JSON.parse(JSON.stringify(XS.parser.SANITY_DEFAULTS)) : { headerMagic: "onex", headerVersion: 256, statMin: 0, statMax: 500, rankMax: 10000, maxAnomalies: 8 },
       },
       /*
        * Calibration: which raw slot of a soldier block is which stat.
@@ -198,6 +203,13 @@
     }
     if (typeof f.teamStringPrefix !== "string" || f.teamStringPrefix.length > 64) f.teamStringPrefix = d.format.teamStringPrefix;
     if (!Array.isArray(f.roleNames) || !f.roleNames.every((x) => typeof x === "string")) f.roleNames = d.format.roleNames;
+    if (!isPlainObject(f.sanity)) f.sanity = d.format.sanity;
+    else {
+      if (typeof f.sanity.headerMagic !== "string" || f.sanity.headerMagic.length === 0 || f.sanity.headerMagic.length > 16) f.sanity.headerMagic = d.format.sanity.headerMagic;
+      for (const k of ["headerVersion", "statMin", "statMax", "rankMax", "maxAnomalies"]) {
+        if (typeof f.sanity[k] !== "number" || !Number.isFinite(f.sanity[k])) f.sanity[k] = d.format.sanity[k];
+      }
+    }
     settings.format = f;
     const c = isPlainObject(settings.calibration) ? settings.calibration : {};
     if (!isPlainObject(c.statSlots)) c.statSlots = d.calibration.statSlots;
@@ -222,6 +234,15 @@
       }
       if (typeof obj.format.teamStringPrefix !== "string" || obj.format.teamStringPrefix.length > 64) errors.push("format.teamStringPrefix must be a string of at most 64 chars");
       if (obj.format.roleNames !== undefined && (!Array.isArray(obj.format.roleNames) || !obj.format.roleNames.every((x) => typeof x === "string"))) errors.push("format.roleNames must be an array of strings");
+      if (obj.format.sanity !== undefined) {
+        if (!isPlainObject(obj.format.sanity)) errors.push("format.sanity must be an object");
+        else {
+          if (obj.format.sanity.headerMagic !== undefined && (typeof obj.format.sanity.headerMagic !== "string" || obj.format.sanity.headerMagic.length === 0 || obj.format.sanity.headerMagic.length > 16)) errors.push("format.sanity.headerMagic must be a non-empty string of at most 16 chars");
+          for (const k of ["headerVersion", "statMin", "statMax", "rankMax", "maxAnomalies"]) {
+            if (obj.format.sanity[k] !== undefined && (typeof obj.format.sanity[k] !== "number" || !Number.isFinite(obj.format.sanity[k]))) errors.push("format.sanity." + k + " must be a finite number");
+          }
+        }
+      }
     }
     if (obj.calibration !== undefined) {
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");

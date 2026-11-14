@@ -33,3 +33,4 @@ require("../settings.test.js");
 require("../assignment.test.js");
 require("../texts.test.js");
 require("../security.test.js");
+require("../sanity.test.js");

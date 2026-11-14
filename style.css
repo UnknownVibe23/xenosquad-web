@@ -124,6 +124,14 @@ body {
   color: #ffd7d7;
 }
 
+/* sanity-warning banner: the loaded save may not be a vanilla Xenonauts 1
+ * save, so its parsed numbers may be wrong (amber, distinct from error red) */
+.panel.warn {
+  border-color: #b0782a;
+  color: #ffd9a8;
+}
+.panel.warn h2 { color: #ffc46b; }
+
 .panel.muted { color: var(--muted); }
 
 .placeholder { color: var(--muted); font-style: italic; }
@@ -379,6 +387,7 @@ table.roster td.sub, .sub { color: var(--muted); font-size: 0.72rem; }
 td.wounded, tr.wounded td .num { color: var(--danger); }
 .team-badge { color: var(--accent-2); font-size: 0.78rem; white-space: nowrap; }
 .note-box { border-left: 3px solid #8a7a3a; background: #3a332022; border-radius: 0 8px 8px 0; padding: 0.3rem 0.7rem; margin: 0.3rem 0; }
+.warn-box { border-left-color: #b0782a; background: #3a2c1a22; }
 
 /* settings: grouped global behavior */
 .set-group { margin-top: 0.8rem; }

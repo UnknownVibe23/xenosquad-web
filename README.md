@@ -161,6 +161,9 @@ Everything remains plain data in the Roles tab/Settings - change anything live.
   is the hand-written Kuhn–Munkres solver
 - `settings/` - defaults, validation, merge, export/import, localStorage (storage injected)
 - `ui/` - rendering only; logic modules never touch the DOM
+- `assets/icons/` - the 8 official in-game class icons (85x85 PNGs extracted from the repo
+  owner's own game screenshot, included with permission); referenced by relative path, which
+  the CSP (`img-src 'self' data:`) allows and `file://` supports
 - `tests/`, `tools/` - test suite + synthetic fixture generator
 
 All logic modules are importable by Node without a DOM. Every file uses a tiny UMD-style

@@ -58,4 +58,19 @@
       t.equal(idx, -1, f + " contains an em dash at char " + idx);
     });
   });
+
+  test("icons: every seeded role id has its extracted icon file (node only)", (t) => {
+    t.equal(XS.domain.roleIcon("mg"), "assets/icons/mg.png", "roleIcon path shape");
+    if (typeof require !== "function" || typeof process === "undefined" || !process.versions || !process.versions.node) {
+      t.ok(true, "skipped in browser (fs unavailable)");
+      return;
+    }
+    const fs = require("fs");
+    const path = require("path");
+    const repo = path.join(__dirname, "..");
+    XS.domain.defaultRoles().forEach((r) => {
+      const p = path.join(repo, XS.domain.roleIcon(r.id));
+      t.ok(fs.existsSync(p), "icon file exists for role " + r.id + ": " + XS.domain.roleIcon(r.id));
+    });
+  });
 })(typeof self !== "undefined" ? self : globalThis);

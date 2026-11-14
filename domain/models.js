@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.19.0";
+  const APP_VERSION = "0.20.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.20.0", note: "Official in-game class icons (assets/icons/, extracted from the owner's own screenshot with permission) shown next to roles in the seat builder, template counters, pick cards and Roles tab." },
     { version: "0.19.0", note: "Empty seats are now explained directly on their seat card in the suggested squad (\"no eligible soldier for this seat\"), instead of as separate notice lines." },
     { version: "0.18.0", note: "Veteran doctrine update (verified meta): new weights/floors/frontline/trains per role; hard sourced floors STR 70 (Heavy weapons, Rocketeer recoil), ACC 65 (Sniper), STR 55 (Shield), ACC 40 (Assault); trains never list BRV/HP; wounded threshold default 0.5 -> 0.75. Roster table tightened so it fits the panel without inner scrolling." },
     { version: "0.17.0", note: "README reworked (no stale references). Soldiers tab: legend is now a line-per-entry list and the loadout column is cleaned up (save stores loadout strings twice; now deduped, prefixes stripped, no truncation; recruits show their armour). All user-facing texts are em-dash-free, guarded by a test. No em dashes in UI sources, enforced." },
@@ -88,6 +89,16 @@
     "Rocketeer",
     "Specialist",
   ];
+
+  /*
+   * In-game class icon for one of OUR role ids (assets/icons/<id>.png,
+   * extracted from the owner's own game screenshot, included with permission;
+   * CSP img-src 'self' allows same-origin images, relative path works from
+   * file://). Ids are stable, so saved roles keep their icon.
+   */
+  function roleIcon(roleId) {
+    return "assets/icons/" + roleId + ".png";
+  }
 
   function makeRole(init) {
     const role = {
@@ -206,6 +217,7 @@
     STATS,
     STAT_LABELS,
     EQUIPMENT_ROLES,
+    roleIcon,
     makeRole,
     makeTemplate,
     VERSION_HISTORY,

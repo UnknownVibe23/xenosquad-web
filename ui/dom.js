@@ -11,7 +11,7 @@
   const api = factory(XS);
   XS.dom = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof self !== "undefined" ? self : globalThis, function () {
+})(typeof self !== "undefined" ? self : globalThis, function (XS) {
   "use strict";
 
   function h(tag, attrs, children) {
@@ -50,5 +50,16 @@
     while (el.firstChild) el.removeChild(el.firstChild);
   }
 
-  return { h, clear };
+  /*
+   * Small in-game class icon for a role id (assets/icons/<id>.png). The CSP
+   * (img-src 'self' data:) allows same-origin images, and relative paths work
+   * from file:// as well as GitHub Pages. `alt` stays empty: the role name is
+   * always shown next to the icon, so the icon is decorative.
+   */
+  function icon(roleId, size) {
+    const px = size || 18;
+    return h("img", { src: XS.domain.roleIcon(roleId), alt: "", class: "role-icon", width: String(px), height: String(px) });
+  }
+
+  return { h, clear, icon };
 });

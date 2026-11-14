@@ -339,3 +339,16 @@ details.panel.advanced summary {
   font-size: 0.95rem;
 }
 details.panel.advanced[open] summary { margin-bottom: 0.5rem; color: var(--text); }
+
+/* recruit pick marking in the squad result */
+.pick.recruit-pick { border-color: #d8a23a; background: #2a2517; }
+.recruit-flag {
+  background: #3a3320;
+  color: #ffe9a8;
+  border: 1px solid #d8a23a;
+  border-radius: 6px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

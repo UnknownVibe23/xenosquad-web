@@ -282,9 +282,11 @@
         ]);
       }
       const s = p.soldier;
-      return h("div", { class: "pick" + (p.training ? " training" : "") }, [
+      const isRecruit = s.inTeam === false;
+      return h("div", { class: "pick" + (p.training ? " training" : "") + (isRecruit ? " recruit-pick" : "") }, [
         h("div", { class: "pick-head" }, [
           h("span", { class: "pick-role", text: "Seat " + (p.seatIndex + 1) + " · " + p.role.name }),
+          isRecruit ? h("span", { class: "recruit-flag", text: "recruit — hire first" }) : null,
           h("span", { class: "pick-name", text: s.name }),
         ]),
         h("div", { class: "pick-sub", text: (s.nationality || "") + (s.equipmentRole ? " · game role: " + s.equipmentRole : "") + (p.training ? " · training seat" : "") }),

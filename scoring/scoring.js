@@ -327,6 +327,12 @@
       picks[seatIndex] = { seatIndex, roleId, role, soldier, score: cell, why: contribs.length ? ["top stats: " + contribs.join(", ")] : ["no weighted stats"], training: false };
     }
 
+    // flag recruitable picks so the UI can mark them ("hire first")
+    const recruitPicks = picks.filter((p) => p && p.soldier && p.soldier.inTeam === false);
+    if (recruitPicks.length > 0) {
+      notices.push(recruitPicks.length + " suggested pick(s) are recruitable soldiers — hire them in-game before the mission (marked on their pick card).");
+    }
+
     // bench: eligible soldiers not picked, best first
     const pickedIds = new Set(picks.filter((p) => p && p.soldier).map((p) => p.soldier.id));
     const bench = pool

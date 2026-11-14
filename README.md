@@ -24,15 +24,31 @@ The site is plain HTML/CSS/JS with **zero dependencies and zero build step**:
 - serve the folder with any static server, or
 - publish it on **GitHub Pages** (below).
 
-### Publishing on GitHub Pages
-
-1. Push this repository to GitHub.
-2. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a
-   branch**.
-3. Pick the branch (e.g. `main`) and folder **`/` (root)**, then Save.
-4. GitHub builds the site at `https://<owner>.github.io/xenosquad-web/` (a few minutes).
+### Publishing on GitHub Pages (via GitHub Actions — recommended)
 
 No build step is needed: the deployed site is exactly the files in this repo.
+
+1. Merge `.github/workflows/pages.yml` into `main`.
+2. One-time switch in the repo UI: **Settings → Pages → Build and deployment → Source:
+   _GitHub Actions_** (replaces the legacy "Deploy from a branch" mode).
+3. Every push to `main` runs the test suite first, then deploys the whole repo to
+   `https://<owner>.github.io/xenosquad-web/` (a few minutes). PRs run CI only.
+
+(Legacy alternative: Settings → Pages → Source: Deploy from a branch → `main` → `/ (root)`.)
+
+### CI and branch protection (team workflow)
+
+- `.github/workflows/ci.yml` runs `node --test tests/node/suite.test.js` plus a syntax
+  check of every JS file on every PR to `main` and every push.
+- Recommended ruleset on `main` (Settings → Rulesets → New branch ruleset, target:
+  *Default branch*): **Require a pull request before merging**, **Restrict updates**,
+  **Restrict deletions**, **Block force pushes**, and once the CI workflow has run at
+  least once, **Require status checks to pass** → add the `test (node 22)` check.
+  Allowed merge methods: *squash* (clean linear history). Approvals: 0 for a solo repo,
+  raise to 1 when a teammate joins. Leave signed commits / code scanning off for now.
+- Day-to-day flow: work on a short-lived `vibe/<slug>` branch → open a PR to `main` →
+  CI green → squash-merge → delete the head branch (enable "Automatically delete head
+  branches" in Settings → General).
 
 ## Using the app
 

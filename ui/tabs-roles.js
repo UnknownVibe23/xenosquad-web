@@ -145,7 +145,7 @@
         h("div", { class: "f-grid" }, floorInputs),
         h("div", { class: "role-misc" }, [
           h("label", { class: "f-row" }, [
-            h("span", { class: "w-name", text: "kit weight" }),
+            h("span", { class: "w-name", text: "kit weight", title: "Approximate equipment weight for the encumbrance check — editable, since your equipment (and so kit weight) changes over the campaign" }),
             h("input", {
               type: "number",
               min: "0",

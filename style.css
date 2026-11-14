@@ -314,3 +314,28 @@ tr.recruit td { color: var(--muted); }
 /* jump-to-result highlight */
 @keyframes flashbg { 0% { background: #2b4a63; } 100% { background: var(--panel); } }
 .panel.flash { animation: flashbg 1.2s ease-out; }
+
+/* soldiers tab polish */
+.note-inline { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0; }
+.legend { font-size: 0.78rem; margin: 0.2rem 0 0.4rem; }
+table.roster tbody tr:nth-child(even) { background: #ffffff08; }
+
+/* roles editor: value box attached to its slider */
+.w-out {
+  min-width: 2.6rem;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.05rem 0.3rem;
+}
+.w-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+
+/* settings advanced (collapsed) section */
+details.panel.advanced summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+details.panel.advanced[open] summary { margin-bottom: 0.5rem; color: var(--text); }

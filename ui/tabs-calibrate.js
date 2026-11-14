@@ -68,6 +68,7 @@
 
     const controls = h("section", { class: "panel" }, [
       h("h2", { text: "Stat mapping (applies to every soldier)" }),
+      h("p", { class: "muted", text: "Verified against the current game build: slots 0..5 = TU, HP, STR, ACC, RFL, BRV (first copy = current), the padding float = current HP. You normally never need to touch this — only change a mapping if your save's values look wrong (e.g. after a game patch)." }),
       h("p", {
         class: "muted",
         text: "Each dropdown assigns one of the six stats to a raw value slot in the save block (the block holds " + statCount + " ints — in the inspected save, six stats appearing twice, likely current then base). The float in the zero padding is a separate value. Change anything and the roster below re-parses live.",

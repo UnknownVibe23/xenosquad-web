@@ -24,8 +24,9 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
-        h("h2", { text: "Roster — " + state.roster.length + " soldiers" }),
-        ...(state.notices || []).map((n) => h("p", { class: "notice", text: "Note: " + n })),
+        h("h2", { text: "Roster — " + state.roster.length + " soldiers (" + state.roster.filter((s) => s.inTeam !== false).length + " in team, " + state.roster.filter((s) => s.inTeam === false).length + " recruitable)" }),
+        ...(state.notices || []).map((n) => h("p", { class: "note-inline", text: "Note: " + n })),
+        h("p", { class: "muted legend", text: "Legend: badge = team member (with transport seat) or recruit · red row = wounded, below the wounded threshold (Settings) · columns TU/HP/STR/ACC/RFL/BRV are the six stats" }),
       ])
     );
 

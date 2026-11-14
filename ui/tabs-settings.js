@@ -74,10 +74,10 @@
       ])
     );
 
-    // ---- save format ----
+    // ---- save format (advanced, collapsed: verified, rarely touched) ----
     main.appendChild(
-      h("section", { class: "panel" }, [
-        h("h2", { text: "Save format parameters" }),
+      h("details", { class: "panel advanced" }, [
+        h("summary", { text: "Advanced — save format parameters (verified against the current game build; only change if your game version differs)" }),
         h("p", { class: "muted", text: "These describe the binary layout the parser scans for. They live in settings so a game patch that shifts offsets never needs a code change. Changing them re-parses the loaded file immediately." }),
         h("div", { class: "set-grid" }, [
           h("label", { class: "set-row" }, [

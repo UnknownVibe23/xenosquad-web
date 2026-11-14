@@ -31,7 +31,7 @@
     t.equal(d.format.teamStringPrefix, "weapon.");
     t.equal(d.format.recruitHpIsFloat, false, "recruit HP float is not current HP by default (verified in-game)");
     t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
-    t.equal(d.global.woundedThreshold, 0.5);
+    t.equal(d.global.woundedThreshold, 0.75, "veteran default: below 75% HP is not fielded");
     t.equal(d.global.encumbranceLimit, 1.0);
     t.equal(d.global.strCapacityBase, 8);
     t.equal(d.global.strCapacityCoef, 0.3);
@@ -43,13 +43,33 @@
     t.equal(d.templates.length, 5);
     t.equal(d.seats.length, 8, "seat builder defaults to 8 seats");
     t.ok(d.roles.every((r) => r.id && r.name && r.weights));
-    // meta-aligned seeded weights (see README "Doctrine basis")
+    // veteran-meta seeded doctrine (see README "Doctrine basis"); hard sourced
+    // floors: STR 70 recoil (mg, rocketeer), ACC 65 (sniper), STR 55 (shield),
+    // ACC 40 (assault); trains never list BRV or HP
     const byId = Object.fromEntries(d.roles.map((r) => [r.id, r]));
+    t.deepEqual(byId.rifleman.weights, { TU: 2, ACC: 3, RFL: 2, BRV: 1 });
+    t.deepEqual(byId.rifleman.trains, ["ACC", "TU"]);
+    t.equal(byId.rifleman.frontline, false);
+    t.deepEqual(byId.scout.weights, { TU: 3, RFL: 2, HP: 1.5, ACC: 1, BRV: 1 });
+    t.deepEqual(byId.scout.floors, {});
+    t.equal(byId.scout.frontline, true);
+    t.deepEqual(byId.sniper.weights, { ACC: 4, RFL: 2, TU: 2.5, BRV: 1 });
+    t.deepEqual(byId.sniper.floors, { ACC: 65 }, "sniper ACC floor is the sourced 65");
     t.deepEqual(byId.mg.weights, { STR: 3, ACC: 3, TU: 1.5 });
-    t.equal(byId.mg.floors.STR, 55, "MG STR floor is a sanity bar, not the game's 70 penalty line");
-    t.deepEqual(byId.assault.weights, { RFL: 3, TU: 2.5, ACC: 1.5, HP: 2 });
-    t.deepEqual(byId.sniper.weights, { ACC: 4, RFL: 2, TU: 2, BRV: 1.5 });
-    t.deepEqual(byId.rocketeer.floors, { STR: 55, ACC: 55, BRV: 50 });
+    t.equal(byId.mg.floors.STR, 70, "HW STR floor is the hard recoil breakpoint 70");
+    t.deepEqual(byId.breacher.weights, { RFL: 3, HP: 3, TU: 2, STR: 2, BRV: 2, ACC: 0.5 });
+    t.deepEqual(byId.breacher.floors, { STR: 55 });
+    t.equal(byId.breacher.frontline, true);
+    t.deepEqual(byId.assault.weights, { RFL: 3, TU: 3, HP: 2, ACC: 1, STR: 1, BRV: 1 });
+    t.deepEqual(byId.assault.floors, { ACC: 40 });
+    t.deepEqual(byId.rocketeer.weights, { STR: 3, ACC: 3, TU: 1.5, BRV: 0.5 });
+    t.deepEqual(byId.rocketeer.floors, { STR: 70 }, "rocketeer STR floor is the hard recoil breakpoint 70");
+    t.deepEqual(byId.medic.weights, { TU: 3, BRV: 2, STR: 1 });
+    t.deepEqual(byId.medic.trains, ["TU"]);
+    d.roles.forEach((r) => {
+      t.notOk((r.trains || []).includes("BRV") || (r.trains || []).includes("HP"),
+        "trains never lists BRV/HP (sourced rule) in role " + r.id);
+    });
     // role display names must be the official in-game loadout class names
     t.ok(d.roles.every((r) => d.roles.length && XS.domain.EQUIPMENT_ROLES.indexOf(r.name) !== -1),
       "every seeded role name is an official in-game class: " + d.roles.map((r) => r.name).join(", "));
@@ -59,7 +79,7 @@
     const d = XS.settings.defaultSettings();
     const merged = XS.settings.deepMerge(d, { global: { psiEra: true }, seats: ["sniper"] });
     t.equal(merged.global.psiEra, true, "saved value wins");
-    t.equal(merged.global.woundedThreshold, 0.5, "missing key falls back to default");
+    t.equal(merged.global.woundedThreshold, 0.75, "missing key falls back to default");
     t.deepEqual(merged.seats, ["sniper"]);
     t.equal(merged.format.marker, "SoldierFlags");
   });

@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.17.0";
+  const APP_VERSION = "0.18.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.18.0", note: "Veteran doctrine update (verified meta): new weights/floors/frontline/trains per role; hard sourced floors STR 70 (Heavy weapons, Rocketeer recoil), ACC 65 (Sniper), STR 55 (Shield), ACC 40 (Assault); trains never list BRV/HP; wounded threshold default 0.5 -> 0.75. Roster table tightened so it fits the panel without inner scrolling." },
     { version: "0.17.0", note: "README reworked (no stale references). Soldiers tab: legend is now a line-per-entry list and the loadout column is cleaned up (save stores loadout strings twice; now deduped, prefixes stripped, no truncation; recruits show their armour). All user-facing texts are em-dash-free, guarded by a test. No em dashes in UI sources, enforced." },
     { version: "0.16.0", note: "Soldiers tab: explicit status column (red = wounded, with the threshold shown); recruits are never marked wounded (in-game they are at full HP; the float in their save block is a different field, now treated as unknown). Slimmer Help tab with this version history. Mission-template cards: tidier spacing + seat count." },
     { version: "0.15.0", note: "Recruits mode is tri-state: off (default) / fill only empty seats / all seats. Recruit picks still get the \"hire first\" badge." },
@@ -132,17 +133,22 @@
   }
 
   /*
-   * Seeded role doctrine — aligned with community meta (Xenonauts Wiki, the
-   * Steam "Essential Weapon Class Tactics" guide, Arqade squad guides):
-   * rifle/scout/assault priorities per weapon class, heavy weapons aiming with
-   * min(STR, ACC), reaction fire = RFL x weapon modifier x %TU left, BRV being
-   * the scarcest (hardest-to-train) stat. Everything is editable in the Roles
-   * tab and stored in settings — these are only the fallback defaults.
-   *
-   * Note on the MG STR floor: the game only adds a heavy-weapon aiming penalty
-   * below 70 STR (it does not forbid it), and early-game rosters rarely have
-   * anyone at 70+, so the hard floor stays a sanity bar (55); the STR 3 / ACC 3
-   * weights make the optimizer pick the best min(STR,ACC) soldier anyway.
+   * Seeded role doctrine - VETERAN META (verified against the Darkfireslide
+   * weapon-class guide, Arqade squad composition, GameFAQs ground-combat and
+   * strategy guides, and the Xenonauts wiki). Hard sourced numbers used as
+   * floors: STR 70 recoil breakpoint for Heavy weapons / Rocketeer (never
+   * fixable, even with Predator armour), ACC 65 for Sniper, STR 55 for Shield,
+   * ACC 40 for Assault. Reaction fire = RFL x weapon modifier x %TU left, so
+   * door/flanker roles weight RFL highest; high RFL on an MG is a
+   * friendly-fire liability and rockets cannot reaction-fire, so both weight
+   * RFL 0. Trains rules: never BRV (panic events/medals only) and never HP
+   * (passive); TU is the only stat that can gain +2 per mission. Judgment
+   * weights (no exact veteran number, tune freely in the Roles tab): Sniper
+   * BRV 1, Shield BRV 2, Assault BRV 1, Rocketeer BRV 0.5, Scout BRV 1.
+   * Known late-game variant NOT modeled (no per-era weight switch exists,
+   * only the psi-era BRV floor): Heavy weapons would drop to STR 1 / TU 2.5.
+   * Everything is editable in the Roles tab and stored in settings - these
+   * are only the fallback defaults.
    *
    * Role display names are the OFFICIAL in-game loadout class names players
    * see in the game (the save's own role strings: Rifleman, Assault, Sniper,
@@ -158,14 +164,14 @@
    */
   function defaultRoles() {
     return [
-      makeRole({ id: "rifleman", name: "Rifleman", weights: { ACC: 3, RFL: 2, TU: 2, BRV: 1 }, floors: {}, kitWeight: 8, trains: ["ACC", "RFL"], frontline: true }),
-      makeRole({ id: "scout", name: "Scout", weights: { TU: 3, HP: 3, RFL: 2 }, floors: { TU: 55, HP: 50 }, kitWeight: 6, trains: ["TU", "HP"], frontline: true }),
-      makeRole({ id: "sniper", name: "Sniper", weights: { ACC: 4, RFL: 2, TU: 2, BRV: 1.5 }, floors: { ACC: 55 }, kitWeight: 9, trains: ["ACC", "RFL"], frontline: false }),
-      makeRole({ id: "mg", name: "Heavy weapons", weights: { STR: 3, ACC: 3, TU: 1.5 }, floors: { STR: 55 }, kitWeight: 16, trains: ["STR", "ACC"], frontline: false }),
-      makeRole({ id: "breacher", name: "Shield", weights: { RFL: 3, HP: 3, TU: 2, STR: 2 }, floors: { HP: 55, RFL: 50 }, kitWeight: 18, trains: ["RFL", "HP"], frontline: true }),
-      makeRole({ id: "assault", name: "Assault", weights: { RFL: 3, TU: 2.5, ACC: 1.5, HP: 2 }, floors: { TU: 55 }, kitWeight: 10, trains: ["TU", "RFL"], frontline: true }),
-      makeRole({ id: "rocketeer", name: "Rocketeer", weights: { STR: 3, ACC: 3, BRV: 1.5 }, floors: { STR: 55, ACC: 55, BRV: 50 }, kitWeight: 15, trains: ["STR", "BRV"], frontline: false }),
-      makeRole({ id: "medic", name: "Specialist", weights: { BRV: 2, TU: 2, STR: 1 }, floors: {}, kitWeight: 9, trains: ["BRV", "TU"], frontline: false }),
+      makeRole({ id: "rifleman", name: "Rifleman", weights: { TU: 2, ACC: 3, RFL: 2, BRV: 1 }, floors: {}, kitWeight: 8, trains: ["ACC", "TU"], frontline: false }),
+      makeRole({ id: "scout", name: "Scout", weights: { TU: 3, RFL: 2, HP: 1.5, ACC: 1, BRV: 1 }, floors: {}, kitWeight: 6, trains: ["TU", "RFL"], frontline: true }),
+      makeRole({ id: "sniper", name: "Sniper", weights: { ACC: 4, RFL: 2, TU: 2.5, BRV: 1 }, floors: { ACC: 65 }, kitWeight: 9, trains: ["ACC", "TU"], frontline: false }),
+      makeRole({ id: "mg", name: "Heavy weapons", weights: { STR: 3, ACC: 3, TU: 1.5 }, floors: { STR: 70 }, kitWeight: 16, trains: ["STR", "ACC"], frontline: false }),
+      makeRole({ id: "breacher", name: "Shield", weights: { RFL: 3, HP: 3, TU: 2, STR: 2, BRV: 2, ACC: 0.5 }, floors: { STR: 55 }, kitWeight: 18, trains: ["TU", "RFL"], frontline: true }),
+      makeRole({ id: "assault", name: "Assault", weights: { RFL: 3, TU: 3, HP: 2, ACC: 1, STR: 1, BRV: 1 }, floors: { ACC: 40 }, kitWeight: 10, trains: ["TU", "RFL"], frontline: true }),
+      makeRole({ id: "rocketeer", name: "Rocketeer", weights: { STR: 3, ACC: 3, TU: 1.5, BRV: 0.5 }, floors: { STR: 70 }, kitWeight: 15, trains: ["STR", "TU"], frontline: false }),
+      makeRole({ id: "medic", name: "Specialist", weights: { TU: 3, BRV: 2, STR: 1 }, floors: {}, kitWeight: 9, trains: ["TU"], frontline: false }),
     ];
   }
 

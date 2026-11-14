@@ -123,24 +123,33 @@ like "Test Soldier 1"). Never commit a real save or real soldier names.
 
 ## Doctrine basis (why the seeded role weights/floors look like this)
 
-Reviewed against community meta: the Xenonauts Wiki (stats, reaction fire), the Steam guide
-*"A Xenonauts 1 Essential Weapon Class Tactics Guide"*, Arqade squad-composition/carry-weight
-Q&As, and r/Xenonauts class-stat threads. Key mechanics that shape the defaults:
+Veteran meta, verified against the Darkfireslide weapon-class guide, Arqade squad-composition
+threads, GameFAQs ground-combat/strategy guides, and the Xenonauts wiki (Machine Gun, Morale,
+Xenonaut Stats). Hard sourced numbers used as floors:
 
+- **STR 70 recoil breakpoint** for Heavy weapons and Rocketeer (never fixable, even with
+  Predator armour) → `STR: 70` floors on both. Heavy weapons aim with min(STR, ACC), so both
+  weight STR 3 / ACC 3; high RFL on an MG is a friendly-fire liability and rockets cannot
+  reaction-fire, so both weight RFL 0.
+- **ACC 65** for Sniper, **STR 55** for Shield (veteran triage), **ACC 40** for Assault (never run
+  sub-40 ACC shotgunners; 40 is the tightest reading of the sourced rule).
 - Reaction fire is deterministic initiative = **RFL × weapon reaction modifier × %TU left** →
-  frontline/door roles (breacher, assault) weight RFL highest; shotguns/pistols get 1.5×.
-- **Heavy weapons aim with min(STR, ACC)**, plus an extra penalty below 70 STR → MG/rocketeer
-  weight STR and ACC equally. The 70 is *not* used as a hard floor (too strict early - rosters
-  rarely have 70+ STR then); the floor stays a sanity bar at 55 and the weights pick the best
-  min(STR,ACC) soldier.
+  door/flanker roles (Shield, Assault, Scout) weight RFL high.
+- **Trains rules (sourced):** BRV only progresses from panic events and medals (+1-3, not
+  farmable) and HP rises passively, so neither is ever listed in `trains`; TU is the only stat
+  that can gain +2 per mission (~250 TU of movement per point).
+- Judgment-based weights (no exact veteran number exists; tune freely): Sniper BRV 1, Shield
+  BRV 2, Assault BRV 1, Rocketeer BRV 0.5, Scout BRV 1.
 - **Carrying capacity = 8 kg + 0.3 kg × STR** (gameconfig.xml); the TU penalty starts above
   **100 %** of capacity, while **80 %** is the threshold at which moving trains STR (that's what
   `strength_training` roles invert to). The app models this with `strCapacityBase`,
   `strCapacityCoef`, `encumbranceLimit` (default 1.0) and `strTrainThreshold` (0.8) in Settings.
-- **BRV is the scarcest stat** (trains only via panic/medals/psi defense) → the psi-era
-  frontline BRV floor; sniper keeps some BRV because exposed overwatch positions panic.
+- **Wounded threshold default 0.75**: field only nearly-full soldiers (veteran default).
 - 8-man squad meta is 2 shield / 2 assault / 2 riflemen / 1 sniper / 1 heavy → the seeded
   "Crash site" template.
+
+Known late-game variant **not** modeled (there is no per-era weight switch in settings, only the
+psi-era BRV floor): Heavy weapons would drop to STR 1 / TU 2.5 late-game.
 
 Everything remains plain data in the Roles tab/Settings - change anything live.
 

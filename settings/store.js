@@ -70,7 +70,7 @@
        * All editable in the Settings tab.
        */
       global: {
-        woundedThreshold: 0.5, // HP fraction below which a soldier is ineligible
+        woundedThreshold: 0.75, // HP fraction below which a soldier is ineligible (veteran default: field only nearly-full soldiers)
         encumbranceLimit: 1.0, // kit must stay at/below this fraction of capacity to avoid the TU penalty
         strCapacityBase: 8, // kg; capacity = strCapacityBase + strCapacityCoef x STR
         strCapacityCoef: 0.3, // kg per STR point (gameconfig.xml: 8kg + 0.3kg * strength)

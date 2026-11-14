@@ -28,7 +28,7 @@
           h("li", { text: "Squad tab, top to bottom: load the save, build the squad request (+ role buttons with icons, per-seat role dropdown, × to remove; default 8 seats like the CH-48 Charlie), read the suggested squad, bench and the \"why\" per pick (all live). Mission templates (apply dropdown; editor collapsed) and the save inspection sit in collapsed panels below." }),
           h("li", { text: "Soldiers: the parsed roster. Roles: your doctrine (weights, floors, kit weight). Settings: global parameters, export/import, resets, Clear all my data." }),
         ]),
-        h("p", { class: "muted", text: "The save format was verified against real saves and in-game screenshots and is built in (the Calibrate/save-format UI is hidden because the GOG build is final; see README to re-enable it). Fields we could not locate (rank) disable their feature with a notice instead of inventing values." }),
+        h("p", { class: "muted", text: "The save format was verified against real saves and in-game screenshots and is built in (the Calibrate/save-format UI is hidden because the GOG build is final; see README to re-enable it). Stats are shown as in-game: the PVT to CPL promotion adds +2 to every stat and is not stored in the stat ints, so the app adds it from the rank points. If a field cannot be located, its feature is disabled with a notice instead of inventing values." }),
       ])
     );
 

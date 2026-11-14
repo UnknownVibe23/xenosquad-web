@@ -405,7 +405,7 @@
     else if (chp.kind === "slot" && Number.isInteger(chp.slot) && chp.slot >= 0 && chp.slot < raw.statInts.length) currentHP = raw.statInts[chp.slot];
     let rank = 0;
     let rankKind = "none";
-    const rk = cal.rank || { kind: "none" };
+    const rk = cal.rank || { kind: "postInt", index: 0 };
     if (rk.kind === "slot" && Number.isInteger(rk.slot) && rk.slot >= 0 && rk.slot < raw.statInts.length) {
       rank = raw.statInts[rk.slot];
       rankKind = "slot";
@@ -414,8 +414,25 @@
       rank = m ? parseInt(m[1], 10) : 0;
       rankKind = "experience";
     } else if (rk.kind === "postInt" && Number.isInteger(rk.index) && raw.postInts && rk.index >= 0 && rk.index < raw.postInts.length) {
+      // VERIFIED: postInts[0] is the soldier's rank points (gameconfig.xml
+      // soldierRanks: PVT 0, CPL 3, SGT 9, LT 16, CPT 30, ...)
       rank = raw.postInts[rk.index];
       rankKind = "postInt";
+    }
+    /*
+     * Promotion bonus: the first promotion (PVT -> CPL, i.e. rank points >= 3)
+     * grants +2 to EVERY stat (Arqade/gameconfig). Verified against roster
+     * screenshots: the in-game screen shows stat-int + 2 for CPL+ soldiers,
+     * while the save's stat ints do NOT include the bonus. So we add it here to
+     * make the app's numbers match the game. The bonus raises max HP as well;
+     * the stored current-HP float is left as-is.
+     * Tunable via calibration.promotionBonus (set bonus 0 to disable).
+     */
+    const pb = cal.promotionBonus;
+    if (pb && typeof pb.bonus === "number" && typeof pb.rankPointsAtOrAbove === "number" && rank >= pb.rankPointsAtOrAbove) {
+      for (const st of XS.domain.STATS) {
+        if (typeof stats[st] === "number") stats[st] += pb.bonus;
+      }
     }
     // the save stores each loadout string twice; keep the first occurrence only
     const seen = new Set();
@@ -450,9 +467,9 @@
     if (!res.ok) return res;
     const cal = settings.calibration || {};
     const notices = [];
-    const rk = cal.rank || { kind: "none" };
+    const rk = cal.rank || { kind: "postInt", index: 0 };
     if (rk.kind === "none") {
-      notices.push("Rank could not be located in the soldier block, so the rank tie-breaker is disabled (all ranks count as equal).");
+      notices.push("Rank mapping is disabled in settings, so the rank tie-breaker is off (all ranks count as equal).");
     }
     let missingHP = true;
     const chp = cal.currentHP || { kind: "float" };

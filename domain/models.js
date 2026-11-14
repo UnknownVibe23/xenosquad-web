@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.22.0";
+  const APP_VERSION = "0.23.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.23.0", note: "Save format update verified against a fresh-game save + roster screenshot: postInts[0] is rank POINTS (gameconfig soldierRanks; PVT 0, CPL 3, SGT 9, LT 16, CPT 30), and the first promotion (PVT -> CPL) adds +2 to EVERY stat without storing it in the stat ints, so the app now adds that bonus to displayed/used stats (calibration.promotionBonus). Rank is now located: shown as a name in the roster and the rank tie-breaker is enabled." },
     { version: "0.22.0", note: "Full hardening pass (redteam): new tests/security.test.js (parser fuzzing, hostile settings imports, source scans for network/eval/cookie/HTML sinks + CSP checks, determinism fuzz, Hungarian vs brute force). Real bug found and fixed: the training seat could reserve a soldier who fails the seat's floors; it now picks the lowest-composite soldier among those eligible for the seat. Settings imports are validated and corrupted localStorage is sanitized." },
     { version: "0.21.0", note: "Squad tab decluttered: core flow is now load -> squad request -> suggested squad at the top; save inspection and the template editor moved into collapsed panels below (template apply dropdown stays visible)." },
     { version: "0.20.0", note: "Official in-game class icons (assets/icons/, extracted from the owner's own screenshot with permission) shown next to roles in the seat builder, template counters, pick cards and Roles tab." },
@@ -100,6 +101,32 @@
    */
   function roleIcon(roleId) {
     return "assets/icons/" + roleId + ".png";
+  }
+
+  /*
+   * Rank tiers: rank points -> in-game rank name (gameconfig.xml soldierRanks;
+   * 0/3/9/16/30 verified against the wiki/community for PVT/CPL/SGT/LT/CPT, the
+   * higher tiers follow the same table's order). The PVT -> CPL promotion also
+   * grants +2 to every stat (Arqade/gameconfig) - that bonus is NOT stored in
+   * the stat ints, so the parser adds it via calibration.promotionBonus.
+   */
+  const RANK_TIERS = [
+    [0, "PVT"],
+    [3, "CPL"],
+    [9, "SGT"],
+    [16, "LT"],
+    [30, "CPT"],
+    [50, "MAJ"],
+    [75, "CMDR"],
+    [100, "COL"],
+  ];
+
+  /* Rank label for a rank-point value, e.g. 9 -> "SGT". */
+  function rankLabel(rankPoints) {
+    const p = typeof rankPoints === "number" && Number.isFinite(rankPoints) ? rankPoints : 0;
+    let label = RANK_TIERS[0][1];
+    for (const [min, name] of RANK_TIERS) if (p >= min) label = name;
+    return label;
   }
 
   function makeRole(init) {
@@ -220,6 +247,8 @@
     STAT_LABELS,
     EQUIPMENT_ROLES,
     roleIcon,
+    RANK_TIERS,
+    rankLabel,
     makeRole,
     makeTemplate,
     VERSION_HISTORY,

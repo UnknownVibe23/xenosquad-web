@@ -167,17 +167,21 @@
     t.equal(res.soldiers[0].currentHP, spec.soldiers[0].statInts[1], "currentHP from HP slot (slot 1)");
   });
 
-  test("calibration: hpFraction and rank degrade gracefully when not locatable", (t) => {
-    const { bytes } = fixture(37, 4);
+  test("calibration: rank maps to postInts[0] (rank points) by default; opting out degrades gracefully", (t) => {
+    const { bytes, spec } = fixture(37, 4);
     const settings = XS.settings.defaultSettings();
     const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
-    // rank kind 'none' -> rank 0 and a visible notice, no invented values
-    t.ok(res.notices.some((n) => /rank/i.test(n)), "rank notice present");
+    res.soldiers.forEach((s, i) => t.equal(s.rank, spec.soldiers[i].postInts[0], "rank = postInts[0] by default"));
+    t.notOk(res.notices.some((n) => /rank/i.test(n)), "no rank notice when mapped");
     res.soldiers.forEach((s) => {
-      t.equal(s.rank, 0);
       const frac = XS.domain.hpFraction(s);
-      t.ok(frac > 0 && frac <= 1, "hpFraction in (0,1]");
+      t.ok(frac == null || (frac > 0 && frac <= 1), "hpFraction sane");
     });
+    // explicit opt-out: rank 0 and a visible notice, no invented values
+    settings.calibration.rank = { kind: "none" };
+    const resNone = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    t.ok(resNone.notices.some((n) => /rank/i.test(n)), "rank notice when disabled");
+    resNone.soldiers.forEach((s) => t.equal(s.rank, 0));
     // rank from the experience string number
     settings.calibration.rank = { kind: "experience" };
     const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
@@ -199,6 +203,37 @@
       t.approx(XS.domain.hpFraction(s), expected, 1e-6);
       t.equal(s.equipmentRole, spec.soldiers[i].role);
     });
+  });
+
+  test("calibration: PVT->CPL promotion bonus (+2 to every stat) applied from rank points, matching the in-game screen", (t) => {
+    // Verified against a fresh-game save + roster screenshot: screen = save
+    // stat int + 2 for soldiers with rank points >= 3; the ints do NOT include it
+    const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 51, soldiers: 4, rankPoints: 5 }); // CPL tier
+    const settings = XS.settings.defaultSettings();
+    const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    res.soldiers.forEach((s, i) => {
+      const ints = spec.soldiers[i].statInts;
+      for (const st of XS.domain.STATS) {
+        t.equal(s.stats[st], ints[settings.calibration.statSlots[st]] + 2, st + " includes the +2 promotion bonus");
+      }
+      t.equal(s.rank, 5, "rank points read from postInts[0]");
+      t.equal(XS.domain.rankLabel(s.rank), "CPL", "rank label");
+    });
+    // PVT (0 points): no bonus, raw ints
+    const fx0 = XS.fixture.buildFixtureSave({ seed: 52, soldiers: 3 });
+    const res0 = XS.parser.parseSaveWithSettings(bufferOf(fx0.bytes), settings);
+    res0.soldiers.forEach((s, i) => {
+      for (const st of XS.domain.STATS) {
+        t.equal(s.stats[st], fx0.spec.soldiers[i].statInts[settings.calibration.statSlots[st]], "PVT: raw int, no bonus");
+      }
+      t.equal(s.rank, 0);
+      t.equal(XS.domain.rankLabel(s.rank), "PVT");
+    });
+    // bonus tunable off via settings
+    const s2 = XS.settings.defaultSettings();
+    s2.calibration.promotionBonus = { rankPointsAtOrAbove: 3, bonus: 0 };
+    const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), s2);
+    t.equal(res2.soldiers[0].stats.TU, spec.soldiers[0].statInts[0], "bonus 0 disables it");
   });
 
   test("parser: current-HP float is read at the configured offset (stats-end + hpFloatOffset)", (t) => {

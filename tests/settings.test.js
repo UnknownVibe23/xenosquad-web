@@ -31,6 +31,8 @@
     t.equal(d.format.teamStringPrefix, "weapon.");
     t.equal(d.format.recruitHpIsFloat, false, "recruit HP float is not current HP by default (verified in-game)");
     t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
+    t.deepEqual(d.calibration.rank, { kind: "postInt", index: 0 }, "rank points = postInts[0] by default (verified)");
+    t.deepEqual(d.calibration.promotionBonus, { rankPointsAtOrAbove: 3, bonus: 2 }, "PVT->CPL +2 all stats applied by default");
     t.equal(d.global.woundedThreshold, 0.75, "veteran default: below 75% HP is not fielded");
     t.equal(d.global.encumbranceLimit, 1.0);
     t.equal(d.global.strCapacityBase, 8);
@@ -177,6 +179,17 @@
     t.notOk(XS.settings.deserialize(JSON.stringify({ app: "xenosquad-web", settings: { format: { marker: "" } } })).ok, "invalid marker");
     const errs = XS.settings.deserialize("nope").errors;
     t.ok(errs[0].indexOf("JSON") !== -1, "error mentions JSON: " + errs[0]);
+  });
+
+  test("settings: rankLabel maps rank points to in-game rank names (gameconfig soldierRanks)", (t) => {
+    t.equal(XS.domain.rankLabel(0), "PVT");
+    t.equal(XS.domain.rankLabel(2), "PVT");
+    t.equal(XS.domain.rankLabel(3), "CPL");
+    t.equal(XS.domain.rankLabel(9), "SGT");
+    t.equal(XS.domain.rankLabel(16), "LT");
+    t.equal(XS.domain.rankLabel(30), "CPT");
+    t.equal(XS.domain.rankLabel(999), "COL");
+    t.equal(XS.domain.rankLabel(null), "PVT", "missing rank degrades to PVT");
   });
 
   test("settings: VERSION_HISTORY is newest-first, unique, and starts at APP_VERSION", (t) => {

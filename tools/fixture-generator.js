@@ -81,9 +81,11 @@
 
   /*
    * Build a synthetic save. Options: { seed, soldiers, saveName, gameDate,
-   * recruitEvery } — with recruitEvery = N, every N-th soldier is a RECRUIT
-   * (armour only, no weapon.* strings, no seat), mimicking the recruitment
-   * pool; everyone else is active team with a loadout. Returns
+   * recruitEvery, rankPoints } — with recruitEvery = N, every N-th soldier is
+   * a RECRUIT (armour only, no weapon.* strings, no seat), mimicking the
+   * recruitment pool; everyone else is active team with a loadout. rankPoints
+   * sets postInts[0] (the rank-point field; >= 3 means promoted past PVT, so
+   * the parser applies the +2 promotion bonus). Returns
    * { bytes, spec } — `spec` exposes exactly what was written (incl. inTeam)
    * so tests can assert against it.
    */
@@ -92,6 +94,7 @@
     const seed = opts.seed == null ? 1 : opts.seed;
     const count = opts.soldiers == null ? 10 : opts.soldiers;
     const recruitEvery = opts.recruitEvery == null ? 0 : opts.recruitEvery;
+    const rankPoints = opts.rankPoints == null ? 0 : opts.rankPoints;
     const saveName = opts.saveName || "planner-test";
     const gameDate = opts.gameDate || "00:00 01 Sep 1979";
     const rnd = mulberry32(seed);
@@ -151,7 +154,7 @@
       // plausible mission/kill-ish counters so Calibrate has raw candidates.
       const postInts = isRecruit
         ? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        : [1 + (i % 9), i % 3, 1, 1, 30 + (i % 40), 0, 0, 0, 0, 0];
+        : [rankPoints, i % 3, 1, 1, 30 + (i % 40), 0, 0, 0, 0, 0]; // postInts[0] = rank points
       for (const v of postInts) w.i32(v);
       w.f32(hpFloat); // the one float among the padding (current HP)
       w.str(regiment);

@@ -88,10 +88,14 @@ an active-team soldier; recruitment-pool soldiers have armour only (in the inspe
 splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Recruit HP**:
 the recruit screen shows pool soldiers at full HP, so the float at the HP offset in a recruit block is
 a different field, not current HP - recruits are treated as HP-unknown and never wounded
-(`format.recruitHpIsFloat`, default false). Rank is not
-cleanly locatable in the block, so the rank tie-breaker stays disabled with a visible notice unless
-mapped in Calibrate. The header stores the save name and in-game date. All offsets/counts/prefixes
-are settings, never hardcoded.
+(`format.recruitHpIsFloat`, default false). **Rank**: postInts[0] (the first small int after the
+stats) is the soldier's rank POINTS (gameconfig.xml `soldierRanks`: PVT 0, CPL 3, SGT 9, LT 16,
+CPT 30, ...), and the first promotion PVT -> CPL adds **+2 to every stat** (Arqade/gameconfig) -
+verified against roster screenshots: the in-game screen shows stat-int + 2 for CPL+ soldiers while
+the save's stat ints do not include the bonus. The parser therefore adds the bonus from the rank
+points (`calibration.promotionBonus`, default on), so app numbers match the in-game screen, and the
+rank tie-breaker uses the points. The header stores the save name and in-game date. All
+offsets/counts/prefixes are settings, never hardcoded.
 
 **Calibrate tab / save-format UI are intentionally hidden for now** (the GOG build of Xenonauts 1
 is final - no patches are expected, so the verified mapping never needs changing). The parser

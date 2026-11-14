@@ -50,13 +50,19 @@
        * Calibration: which raw slot of a soldier block is which stat.
        * VERIFIED against in-game roster screenshots: slots 0..5 of the first
        * (current) copy are TU, HP, STR, ACC, RFL, BRV — note the save stores
-       * HP in slot 1, not slot 5. The padding float is current HP. Rank is
-       * still not locatable and stays disabled. All adjustable in Calibrate.
+       * HP in slot 1, not slot 5. The padding float is current HP. Rank points
+       * are postInts[0]; the PVT->CPL promotion bonus (+2 all stats) is applied
+       * via promotionBonus. All adjustable in Calibrate (hidden UI).
        */
       calibration: {
         statSlots: { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 },
         currentHP: { kind: "float" }, // or { kind: "slot", slot: n }
-        rank: { kind: "none" }, // or { kind: "slot", slot: n } / { kind: "experience" }
+        // rank POINTS live in postInts[0] (verified against roster screenshots;
+        // gameconfig.xml soldierRanks thresholds)
+        rank: { kind: "postInt", index: 0 }, // or { kind: "none" } / { kind: "slot", slot: n } / { kind: "experience" }
+        // first promotion (PVT -> CPL, rank points >= 3) adds +2 to every stat
+        // in-game but is NOT stored in the stat ints; the parser adds it here
+        promotionBonus: { rankPointsAtOrAbove: 3, bonus: 2 },
       },
       /*
        * Global behavior parameters. Carrying capacity follows the game's own

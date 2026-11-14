@@ -39,7 +39,8 @@
           h("li", { text: "red status = wounded: current HP below the threshold (Settings → Eligibility)" }),
           h("li", { text: "recruits are never wounded: in-game they are at full HP" }),
           h("li", { text: "HP column = current/max HP and wound %" }),
-          h("li", { text: "stat columns = TU ACC RFL BRV STR HP" }),
+          h("li", { text: "stat columns = TU ACC RFL BRV STR HP, shown as in-game (the PVT to CPL promotion adds +2 to every stat; rank points from the save drive it)" }),
+          h("li", { text: "rank = in-game rank from the save's rank points (PVT 0, CPL 3, SGT 9, ...)" }),
           h("li", { text: "loadout = equipment strings from the save (armour only for recruits)" }),
         ]),
       ])
@@ -84,7 +85,7 @@
         ...XS.domain.STATS.map((st) => h("td", { class: "num", text: statCell(s.stats[st]) })),
         h("td", { class: "num" + (wounded ? " wounded" : ""), text: hpText }),
         h("td", { class: "status" + statusClass, text: statusText }),
-        h("td", { class: "num", text: String(s.rank) }),
+        h("td", { class: "num", text: XS.domain.rankLabel(s.rank) + " " + s.rank }),
         h("td", { class: "small wrap", text: loadoutCell(s) }),
       ]);
     });

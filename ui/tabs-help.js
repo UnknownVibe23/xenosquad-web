@@ -26,7 +26,7 @@
         h("ol", {}, [
           h("li", { text: "Find the save file your game writes: any .sav from your save slots (a dedicated slot producing planner.sav is handy). It sits in the Xenonauts save folder, Documents/Xenonauts/ — under Windows that is your user Documents folder; when playing through Proton/Wine it is drive_c/users/<user>/Documents/Xenonauts/ inside the Wine prefix." }),
           h("li", { text: "Drag the .sav file anywhere onto this page (or use the file picker on the Squad tab). The file is read locally with the File API and parsed in your browser." }),
-          h("li", { text: "Squad tab: pick a mission template (or build your own seat list — each seat has its own role; add/remove freely, default 8 seats like the CH-48 Charlie). The suggested squad, bench and a one-line \"why\" per pick update live." }),
+          h("li", { text: "Squad tab: pick a mission template (or build your own seat list — each seat has its own role; add/remove freely, default 8 seats like the CH-48 Charlie). The suggested squad, bench and a one-line \"why\" per pick update live; the \"Plan squad\" button jumps straight to the result. Recruits are excluded from the calculation unless you tick the checkbox in the result panel." }),
           h("li", { text: "Soldiers tab: the parsed roster with stats and wound status. Roles tab: edit your doctrine. Settings tab: global parameters, export/import, resets. Calibrate tab: map raw save slots to stats." }),
         ]),
       ])

@@ -310,3 +310,7 @@ tr.recruit td { color: var(--muted); }
   padding: 0.05rem 0.4rem;
   font-size: 0.75rem;
 }
+
+/* jump-to-result highlight */
+@keyframes flashbg { 0% { background: #2b4a63; } 100% { background: var(--panel); } }
+.panel.flash { animation: flashbg 1.2s ease-out; }

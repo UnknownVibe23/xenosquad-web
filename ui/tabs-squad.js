@@ -226,7 +226,7 @@
         h("h2", { text: "2 · Squad request — " + seats.length + " seat" + (seats.length === 1 ? "" : "s") }),
         h("p", { class: "muted", text: "Each seat has its own role. Add or remove seats freely — team size is simply the number of seats (the CH-48 Charlie carries 8 by default). The squad below re-plans live." }),
         h("div", { class: "seat-list" }, rows),
-        h("p", {}, [
+        h("p", { class: "btn-row" }, [
           h("button", {
             type: "button",
             text: "+ Add seat",
@@ -234,6 +234,24 @@
               click: () => {
                 seats.push(roles.length ? roles[0].id : "rifleman");
                 app.settingsChanged();
+              },
+            },
+          }),
+          h("button", {
+            type: "button",
+            class: "primary",
+            text: "Plan squad ▼",
+            title: "Compute the optimal assignment and jump to the result",
+            on: {
+              click: () => {
+                // the plan is already computed live; this jumps to it and flashes it
+                const el = document.getElementById("squad-result");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  el.classList.remove("flash");
+                  void el.offsetWidth; // restart the CSS animation
+                  el.classList.add("flash");
+                }
               },
             },
           }),
@@ -253,6 +271,8 @@
       seats: state.settings.seats,
       solver: XS.hungarian.hungarianMax,
     });
+    const filled = result.picks.filter((p) => p && p.soldier).length;
+    const total = result.picks.length;
     const pickCards = result.picks.map((p) => {
       if (!p) return h("div", { class: "pick empty" }, [h("span", { text: "— empty seat —" })]);
       if (!p.soldier) {
@@ -277,9 +297,26 @@
     });
 
     main.appendChild(
-      h("section", { class: "panel" }, [
-        h("h2", { text: "3 · Suggested squad (optimal assignment via the Hungarian algorithm)" }),
+      h("section", { class: "panel", id: "squad-result" }, [
+        h("h2", { text: "3 · Suggested squad — " + filled + " of " + total + " seats filled (optimal assignment via the Hungarian algorithm)" }),
+        h("p", { class: "muted", text: "Updates live whenever seats, roles or settings change. Recruits are excluded by default." }),
+        h("label", { class: "set-row check" }, [
+          h("input", {
+            type: "checkbox",
+            checked: !!(state.settings.global && state.settings.global.includeRecruits),
+            on: {
+              change: (e) => {
+                state.settings.global.includeRecruits = e.target.checked;
+                XS.app.settingsChanged();
+              },
+            },
+          }),
+          h("span", { text: "include recruitable soldiers in the calculation (off by default — only your active team is considered)" }),
+        ]),
         ...result.notices.map((n) => h("p", { class: "notice", text: n })),
+        filled === 0 && total > 0
+          ? h("p", { class: "notice", text: "No seat could be filled. Check the wounded threshold and role floors in Settings/Roles, or tick 'include recruitable soldiers' above." })
+          : null,
         h("div", { class: "pick-grid" }, pickCards),
       ])
     );

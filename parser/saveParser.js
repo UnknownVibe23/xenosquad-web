@@ -436,7 +436,7 @@
     const notices = [];
     const rk = cal.rank || { kind: "none" };
     if (rk.kind === "none") {
-      notices.push("Rank could not be located in the soldier block, so the rank tie-breaker is disabled (all ranks count as equal). If you find a rank field, map a raw slot to it in the Calibrate tab.");
+      notices.push("Rank could not be located in the soldier block, so the rank tie-breaker is disabled (all ranks count as equal).");
     }
     let missingHP = true;
     const soldiers = res.soldiers.map((raw) => {

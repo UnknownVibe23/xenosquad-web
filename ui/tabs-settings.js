@@ -34,86 +34,47 @@
     const g = s.global;
     const f = s.format;
 
-    // ---- global behavior ----
+    // ---- global behavior (grouped) ----
     const thresholdOut = h("output", { class: "w-out", text: String(g.woundedThreshold) });
     const encOut = h("output", { class: "w-out", text: String(g.encumbranceLimit) });
+    const sliderRow = (label, value, out, min, max, step, onInput) =>
+      h("label", { class: "set-row" }, [
+        h("span", { text: label }),
+        h("input", {
+          type: "range", min: String(min), max: String(max), step: String(step), value: String(value),
+          on: {
+            input: (e) => { onInput(parseFloat(e.target.value)); out.textContent = e.target.value; app.persistSettings(); },
+            change: () => app.settingsChanged(),
+          },
+        }),
+        out,
+      ]);
+    const group = (title, children) => h("div", { class: "set-group" }, [h("h3", { text: title }), h("div", { class: "set-grid" }, children)]);
+
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Global behavior" }),
-        h("div", { class: "set-grid" }, [
-          h("label", { class: "set-row" }, [
-            h("span", { text: "Wounded threshold (HP fraction)" }),
-            h("input", {
-              type: "range", min: "0", max: "1", step: "0.05", value: String(g.woundedThreshold),
-              on: {
-                input: (e) => { g.woundedThreshold = parseFloat(e.target.value); thresholdOut.textContent = e.target.value; app.persistSettings(); },
-                change: () => app.settingsChanged(),
-              },
-            }),
-            thresholdOut,
-          ]),
-          h("label", { class: "set-row" }, [
-            h("span", { text: "Encumbrance limit (fraction of capacity; 1.0 = TU penalty only above full capacity)" }),
-            h("input", {
-              type: "range", min: "0", max: "1", step: "0.05", value: String(g.encumbranceLimit),
-              on: {
-                input: (e) => { g.encumbranceLimit = parseFloat(e.target.value); encOut.textContent = e.target.value; app.persistSettings(); },
-                change: () => app.settingsChanged(),
-              },
-            }),
-            encOut,
-          ]),
-          numField("STR capacity base (kg)", g.strCapacityBase, (v) => { if (Number.isFinite(v)) { g.strCapacityBase = v; app.settingsChanged(); } }),
-          numField("STR capacity per STR point (kg) — capacity = base + coef × STR (game: 8 + 0.3×STR)", g.strCapacityCoef, (v) => { if (Number.isFinite(v)) { g.strCapacityCoef = v; app.settingsChanged(); } }),
-          numField("STR training threshold (fraction of capacity; used by strength-training roles)", g.strTrainThreshold, (v) => { if (Number.isFinite(v)) { g.strTrainThreshold = v; app.settingsChanged(); } }),
-          checkField("Psi era (late-game psi threats)", g.psiEra, (v) => { g.psiEra = v; app.settingsChanged(); }),
-          numField("Psi-era BRV floor for frontline roles", g.psiBrvFloor, (v) => { if (Number.isFinite(v)) { g.psiBrvFloor = v; app.settingsChanged(); } }),
-          checkField("Training seat (lowest-composite healthy soldier rides along)", g.trainingSeat, (v) => { g.trainingSeat = v; app.settingsChanged(); }),
-          numField("Training seat index (-1 = first seat)", g.trainingSeatIndex, (v) => { if (Number.isFinite(v)) { g.trainingSeatIndex = Math.trunc(v); app.settingsChanged(); } }),
-          checkField("Include recruitable soldiers in planning (default: active team only)", !!g.includeRecruits, (v) => { g.includeRecruits = v; app.settingsChanged(); }),
+        group("Eligibility", [
+          sliderRow("Wounded threshold — soldiers below this fraction of HP cannot be fielded", g.woundedThreshold, thresholdOut, 0, 1, 0.05, (v) => { g.woundedThreshold = v; }),
+        ]),
+        group("Encumbrance & strength — capacity = base + coef × STR (kg)", [
+          sliderRow("Encumbrance limit — kit above this fraction of capacity costs TUs (1.0 = only when over full capacity)", g.encumbranceLimit, encOut, 0, 1, 0.05, (v) => { g.encumbranceLimit = v; }),
+          numField("Capacity base (kg)", g.strCapacityBase, (v) => { if (Number.isFinite(v)) { g.strCapacityBase = v; app.settingsChanged(); } }),
+          numField("Capacity per STR point (kg) — game default 0.3", g.strCapacityCoef, (v) => { if (Number.isFinite(v)) { g.strCapacityCoef = v; app.settingsChanged(); } }),
+          numField("STR training threshold (fraction of capacity; strength-training roles load past this to train STR)", g.strTrainThreshold, (v) => { if (Number.isFinite(v)) { g.strTrainThreshold = v; app.settingsChanged(); } }),
+        ]),
+        group("Psi era (late game)", [
+          checkField("Psi era — frontline roles then require the BRV floor below", g.psiEra, (v) => { g.psiEra = v; app.settingsChanged(); }),
+          numField("BRV floor for frontline roles while psi era is on", g.psiBrvFloor, (v) => { if (Number.isFinite(v)) { g.psiBrvFloor = v; app.settingsChanged(); } }),
+        ]),
+        group("Training seat", [
+          checkField("Reserve one seat for the lowest-composite healthy soldier (rookies ride along)", g.trainingSeat, (v) => { g.trainingSeat = v; app.settingsChanged(); }),
+          numField("Which seat is the training seat (-1 = first seat)", g.trainingSeatIndex, (v) => { if (Number.isFinite(v)) { g.trainingSeatIndex = Math.trunc(v); app.settingsChanged(); } }),
+        ]),
+        group("Recruits", [
+          checkField("Include recruitable soldiers in the calculation (off = active team only; picked recruits are marked 'hire first')", !!g.includeRecruits, (v) => { g.includeRecruits = v; app.settingsChanged(); }),
         ]),
         h("p", {}, [h("button", { type: "button", text: "Reset global to defaults", on: { click: () => { XS.settings.resetSection(s, "global"); app.settingsChanged(); } } })]),
-      ])
-    );
-
-    // ---- save format (advanced, collapsed: verified, rarely touched) ----
-    main.appendChild(
-      h("details", { class: "panel advanced" }, [
-        h("summary", { text: "Advanced — save format parameters (verified against the current game build; only change if your game version differs)" }),
-        h("p", { class: "muted", text: "These describe the binary layout the parser scans for. They live in settings so a game patch that shifts offsets never needs a code change. Changing them re-parses the loaded file immediately." }),
-        h("div", { class: "set-grid" }, [
-          h("label", { class: "set-row" }, [
-            h("span", { text: 'Marker string (scanned in raw bytes)' }),
-            h("input", { type: "text", value: f.marker, on: { change: (e) => { f.marker = e.target.value || "SoldierFlags"; app.settingsChanged(); } } }),
-          ]),
-          numField("Expected stat count (ints per soldier block)", f.statCount, (v) => { if (Number.isInteger(v) && v >= 0 && v <= 64) { f.statCount = v; app.settingsChanged(); } }),
-          numField("Current-HP float offset (bytes after the stats)", f.hpFloatOffset, (v) => { if (Number.isInteger(v) && v >= 0 && v <= 4096) { f.hpFloatOffset = v; app.settingsChanged(); } }),
-          numField("Float scan window (bytes after stats, fallback)", f.floatScanBytes, (v) => { if (Number.isFinite(v) && v >= 0) { f.floatScanBytes = Math.trunc(v); app.settingsChanged(); } }),
-          numField("String scan window (bytes after stats)", f.stringScanBytes, (v) => { if (Number.isFinite(v) && v >= 0) { f.stringScanBytes = Math.trunc(v); app.settingsChanged(); } }),
-          h("label", { class: "set-row" }, [
-            h("span", { text: "Team string prefix (block containing it = active team; empty = no distinction)" }),
-            h("input", {
-              type: "text",
-              value: f.teamStringPrefix,
-              placeholder: "weapon.",
-              on: { change: (e) => { f.teamStringPrefix = e.target.value; app.settingsChanged(); } },
-            }),
-          ]),
-          h("label", { class: "set-row" }, [
-            h("span", { text: "Equipment role names (comma-separated)" }),
-            h("input", {
-              type: "text",
-              value: (f.roleNames || []).join(", "),
-              on: {
-                change: (e) => {
-                  f.roleNames = e.target.value.split(",").map((x) => x.trim()).filter(Boolean);
-                  app.settingsChanged();
-                },
-              },
-            }),
-          ]),
-        ]),
-        h("p", {}, [h("button", { type: "button", text: "Reset format to defaults", on: { click: () => { XS.settings.resetSection(s, "format"); app.settingsChanged(); } } })]),
       ])
     );
 

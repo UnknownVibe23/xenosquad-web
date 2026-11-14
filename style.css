@@ -352,3 +352,19 @@ details.panel.advanced[open] summary { margin-bottom: 0.5rem; color: var(--text)
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* roster table: compact, aligned, no letter-wrapping */
+table.roster { font-size: 0.82rem; border-collapse: collapse; }
+table.roster th, table.roster td { white-space: nowrap; padding: 0.3rem 0.55rem; }
+table.roster th.wrap, table.roster td.wrap { white-space: normal; min-width: 7rem; }
+table.roster th.num, table.roster td.num { text-align: right; }
+table.roster thead th { position: sticky; top: 0; background: var(--panel); border-bottom: 2px solid var(--border); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+table.roster tbody tr:nth-child(even) { background: #ffffff10; }
+table.roster td.sub, .sub { color: var(--muted); font-size: 0.72rem; }
+td.wounded, tr.wounded td .num { color: var(--danger); }
+.team-badge { color: var(--accent-2); font-size: 0.78rem; white-space: nowrap; }
+.note-box { border-left: 3px solid #8a7a3a; background: #3a332022; border-radius: 0 8px 8px 0; padding: 0.3rem 0.7rem; margin: 0.3rem 0; }
+
+/* settings: grouped global behavior */
+.set-group { margin-top: 0.8rem; }
+.set-group h3 { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }

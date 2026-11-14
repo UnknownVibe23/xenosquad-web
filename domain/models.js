@@ -26,7 +26,7 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.12.0";
+  const APP_VERSION = "0.13.0";
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */

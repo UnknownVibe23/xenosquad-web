@@ -20,8 +20,11 @@
     { id: "soldiers", label: "Soldiers" },
     { id: "roles", label: "Roles" },
     { id: "settings", label: "Settings" },
-    { id: "calibrate", label: "Calibrate" },
     { id: "help", label: "Help" },
+    // "calibrate" is intentionally hidden for now (the GOG build is final, so
+    // the verified stat mapping / save-format parameters never need changing).
+    // To re-enable: add { id: "calibrate", label: "Calibrate" } here and the
+    // ui/tabs-calibrate.js script tag back into index.html.
   ];
 
   /* UI state. `settings` is the single source of truth and is persisted;

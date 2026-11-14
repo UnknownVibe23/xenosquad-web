@@ -86,6 +86,15 @@ cleanly locatable in the block, so the rank tie-breaker stays disabled with a vi
 mapped in Calibrate. The header stores the save name and in-game date. All offsets/counts/prefixes
 are settings, never hardcoded.
 
+**Calibrate tab / save-format UI are intentionally hidden for now** (the GOG build of Xenonauts 1
+is final — no patches are expected, so the verified mapping never needs changing). The parser
+still reads the mapping and all format parameters from the settings object, so nothing was
+deleted: to re-expose the UI after a hypothetical future build, re-add the `calibrate` entry to
+`TABS` in `ui/main.js`, the `ui/tabs-calibrate.js` script tag in `index.html`, and the
+"Advanced — save format parameters" block in `ui/tabs-settings.js`. If more save files ever show
+a different layout, share one (as `.txt`, never committed) and we decide then whether to bring the
+calibration UI back.
+
 ## Testing
 
 - **Browser (canonical):** open `tests/tests.html` — runs the whole suite (50 tests) and

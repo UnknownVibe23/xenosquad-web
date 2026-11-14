@@ -115,7 +115,12 @@ Covered: the parser against the synthetic fixture (marker scan, string/int/float
 record layout, calibration, robustness), exclusions/normalization/role scoring, the Hungarian
 solver (including the "two roles want the same soldier" case and - in tests only - brute-force
 optimality over random small matrices; the brute-force path never ships in production),
-assignment edge cases, and settings merge + export/import round-trip + namespaced storage.
+assignment edge cases, settings merge + export/import round-trip + namespaced storage, text
+guards, and a security/redteam suite (`tests/security.test.js`): parser fuzzing (random buffers,
+truncations, hostile field values), hostile settings imports (prototype pollution, wrong types,
+out-of-range numbers), source scans (no fetch/XHR/WebSocket, no eval/new Function/document.write,
+no cookies, no innerHTML, CSP meta present, all referenced local files exist), determinism fuzzing
+across random fixtures x settings, and Hungarian-vs-brute-force on hundreds of random matrices.
 
 Tests are hand-written and zero-dependency. Save-file test input is **synthetic**: generate it
 with `node tools/make-fixture.js` (writes `fixtures/synthetic-planner.sav`, invented names

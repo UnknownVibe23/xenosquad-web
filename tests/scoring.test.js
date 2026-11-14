@@ -197,20 +197,40 @@
     t.notOk(result.notices.some((n) => /left empty/.test(n)), "no per-seat notices");
   });
 
-  test("planSquad: training seat reserves one seat for the lowest-composite healthy soldier", (t) => {
+  test("planSquad: training seat reserves one seat for the lowest-composite soldier ELIGIBLE for that seat", (t) => {
     const roster = fixtureRoster(103, 10);
     const settings = XS.settings.defaultSettings();
     settings.global.trainingSeat = true;
     settings.global.trainingSeatIndex = 0;
+    const seatRole = settings.roles.find((r) => r.id === settings.seats[0]);
     const eligible = XS.scoring.computeEligibility(roster, settings).filter((e) => e.eligible).map((e) => e.soldier);
     const norms = XS.scoring.normalizeRoster(eligible);
-    const composites = eligible.map((s) => XS.scoring.composite(norms.norm, s));
+    // the trainee must pass the seat's role floors/encumbrance (redteam find)
+    const forSeat = eligible.filter((s) => XS.scoring.roleEligibility(s, seatRole, settings).ok);
+    t.ok(forSeat.length > 0, "some soldiers are eligible for seat 0's role");
+    const composites = forSeat.map((s) => XS.scoring.composite(norms.norm, s));
     const minIdx = composites.indexOf(Math.min.apply(null, composites));
     const result = XS.scoring.planSquad(roster, settings, {});
     const trainingPick = result.picks[0];
     t.ok(trainingPick.training, "seat 0 is the training seat");
-    t.equal(trainingPick.soldier.id, eligible[minIdx].id, "lowest-composite eligible soldier rides along");
+    t.equal(trainingPick.soldier.id, forSeat[minIdx].id, "lowest-composite seat-eligible soldier rides along");
+    t.ok(XS.scoring.roleEligibility(trainingPick.soldier, seatRole, settings).ok, "trainee passes the seat's floors");
     const others = result.picks.slice(1).filter((p) => p && p.soldier);
     t.ok(others.every((p) => p.soldier.id !== trainingPick.soldier.id), "trainee not double-booked");
+  });
+
+  test("planSquad: training seat is NOT reserved when nobody is eligible for that seat", (t) => {
+    const role = XS.domain.makeRole({ id: "r", name: "R", weights: { ACC: 1 }, floors: { ACC: 99 }, kitWeight: 0 });
+    const settings = XS.settings.defaultSettings();
+    settings.roles = [role];
+    settings.seats = ["r"];
+    settings.global.trainingSeat = true;
+    settings.global.trainingSeatIndex = 0;
+    settings.global.woundedThreshold = 0;
+    const roster = [mkSoldier("a", { ACC: 50 }), mkSoldier("b", { ACC: 60 })];
+    const result = XS.scoring.planSquad(roster, settings, { solver: XS.hungarian.hungarianMax });
+    t.notOk(result.picks[0].training, "no training reservation without an eligible trainee");
+    t.notOk(result.picks[0].soldier, "seat goes through the normal assignment (empty here)");
+    t.ok(/no eligible soldier/.test(result.picks[0].why[0]), "reason on the seat card");
   });
 })(typeof self !== "undefined" ? self : globalThis);

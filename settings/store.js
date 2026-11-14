@@ -116,25 +116,86 @@
     return saved === undefined ? defaults : saved;
   }
 
+  /*
+   * Hardening tables: every numeric/boolean global has an allowed range, so a
+   * hostile or corrupted settings import can never inject weird types into the
+   * pure logic modules. validateSettings (import path) rejects violations;
+   * sanitizeSettings (localStorage path) coerces them back to defaults.
+   */
+  const GLOBAL_NUMS = {
+    woundedThreshold: [0, 1],
+    encumbranceLimit: [0, 1],
+    strCapacityBase: [0, 1000],
+    strCapacityCoef: [0, 100],
+    strTrainThreshold: [0, 1],
+    psiBrvFloor: [0, 200],
+  };
+  const GLOBAL_BOOLS = ["psiEra", "trainingSeat"];
+
+  function sanitizeSettings(settings) {
+    const d = defaultSettings();
+    const g = isPlainObject(settings.global) ? settings.global : {};
+    for (const k of Object.keys(GLOBAL_NUMS)) {
+      const range = GLOBAL_NUMS[k];
+      if (typeof g[k] !== "number" || !Number.isFinite(g[k]) || g[k] < range[0] || g[k] > range[1]) g[k] = d.global[k];
+    }
+    if (!Number.isInteger(g.trainingSeatIndex) || g.trainingSeatIndex < -1 || g.trainingSeatIndex > 10000) g.trainingSeatIndex = d.global.trainingSeatIndex;
+    for (const k of GLOBAL_BOOLS) if (typeof g[k] !== "boolean") g[k] = d.global[k];
+    if ([false, true, "empty"].indexOf(g.includeRecruits) === -1) g.includeRecruits = d.global.includeRecruits;
+    settings.global = g;
+    const f = isPlainObject(settings.format) ? settings.format : {};
+    if (typeof f.marker !== "string" || f.marker.length === 0 || f.marker.length > 64) f.marker = d.format.marker;
+    if (!Number.isInteger(f.statCount) || f.statCount < 0 || f.statCount > 64) f.statCount = d.format.statCount;
+    if (!Number.isInteger(f.hpFloatOffset) || f.hpFloatOffset < 0 || f.hpFloatOffset > 4096) f.hpFloatOffset = d.format.hpFloatOffset;
+    for (const k of ["floatScanBytes", "stringScanBytes"]) {
+      if (!Number.isInteger(f[k]) || f[k] < 0 || f[k] > 1 << 20) f[k] = d.format[k];
+    }
+    if (typeof f.teamStringPrefix !== "string" || f.teamStringPrefix.length > 64) f.teamStringPrefix = d.format.teamStringPrefix;
+    if (typeof f.recruitHpIsFloat !== "boolean") f.recruitHpIsFloat = d.format.recruitHpIsFloat;
+    if (!Array.isArray(f.roleNames) || !f.roleNames.every((x) => typeof x === "string")) f.roleNames = d.format.roleNames;
+    settings.format = f;
+    return settings;
+  }
+
   /* Structural validation of a parsed settings object. Returns error list. */
   function validateSettings(obj) {
     const errors = [];
     if (!isPlainObject(obj)) return ["settings root must be an object"];
     if (!isPlainObject(obj.format)) errors.push("format must be an object");
     else {
-      if (typeof obj.format.marker !== "string" || obj.format.marker.length === 0) errors.push("format.marker must be a non-empty string");
+      if (typeof obj.format.marker !== "string" || obj.format.marker.length === 0 || obj.format.marker.length > 64) errors.push("format.marker must be a non-empty string of at most 64 chars");
       if (!Number.isInteger(obj.format.statCount) || obj.format.statCount < 0 || obj.format.statCount > 64) errors.push("format.statCount must be an integer in 0..64");
       if (!Number.isInteger(obj.format.hpFloatOffset) || obj.format.hpFloatOffset < 0 || obj.format.hpFloatOffset > 4096) errors.push("format.hpFloatOffset must be an integer in 0..4096");
-      if (typeof obj.format.teamStringPrefix !== "string") errors.push("format.teamStringPrefix must be a string");
+      for (const k of ["floatScanBytes", "stringScanBytes"]) {
+        if (obj.format[k] !== undefined && (!Number.isInteger(obj.format[k]) || obj.format[k] < 0 || obj.format[k] > (1 << 20))) errors.push("format." + k + " must be an integer in 0.." + (1 << 20));
+      }
+      if (typeof obj.format.teamStringPrefix !== "string" || obj.format.teamStringPrefix.length > 64) errors.push("format.teamStringPrefix must be a string of at most 64 chars");
       if (obj.format.recruitHpIsFloat !== undefined && typeof obj.format.recruitHpIsFloat !== "boolean") errors.push("format.recruitHpIsFloat must be a boolean");
+      if (obj.format.roleNames !== undefined && (!Array.isArray(obj.format.roleNames) || !obj.format.roleNames.every((x) => typeof x === "string"))) errors.push("format.roleNames must be an array of strings");
     }
     if (obj.calibration !== undefined) {
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");
       else if (!isPlainObject(obj.calibration.statSlots)) errors.push("calibration.statSlots must be an object");
     }
     if (obj.global !== undefined && !isPlainObject(obj.global)) errors.push("global must be an object");
-    else if (obj.global !== undefined && obj.global.includeRecruits !== undefined && [false, true, "empty"].indexOf(obj.global.includeRecruits) === -1) {
-      errors.push('global.includeRecruits must be false, "empty" or true');
+    else if (obj.global !== undefined) {
+      if (obj.global.includeRecruits !== undefined && [false, true, "empty"].indexOf(obj.global.includeRecruits) === -1) {
+        errors.push('global.includeRecruits must be false, "empty" or true');
+      }
+      for (const k of Object.keys(GLOBAL_NUMS)) {
+        if (obj.global[k] !== undefined) {
+          const range = GLOBAL_NUMS[k];
+          if (typeof obj.global[k] !== "number" || !Number.isFinite(obj.global[k]) || obj.global[k] < range[0] || obj.global[k] > range[1]) {
+            errors.push("global." + k + " must be a number in [" + range[0] + ", " + range[1] + "]");
+          }
+        }
+      }
+      for (const k of GLOBAL_BOOLS) {
+        if (obj.global[k] !== undefined && typeof obj.global[k] !== "boolean") errors.push("global." + k + " must be a boolean");
+      }
+      if (obj.global.trainingSeatIndex !== undefined && (!Number.isInteger(obj.global.trainingSeatIndex) || obj.global.trainingSeatIndex < -1 || obj.global.trainingSeatIndex > 10000)) {
+        errors.push("global.trainingSeatIndex must be an integer in -1..10000");
+      }
     }
     if (obj.roles !== undefined) {
       if (!Array.isArray(obj.roles)) errors.push("roles must be an array");
@@ -182,11 +243,13 @@
   function loadSettings(storage) {
     try {
       const raw = storage.getItem(SETTINGS_KEY);
-      if (!raw) return deepMerge(defaultSettings(), {});
+      if (!raw) return sanitizeSettings(deepMerge(defaultSettings(), {}));
       const doc = JSON.parse(raw);
-      return deepMerge(defaultSettings(), isPlainObject(doc) && isPlainObject(doc.settings) ? doc.settings : doc);
+      // localStorage is user-writable, so corrupted values are sanitized
+      // (coerced back to defaults) instead of trusted
+      return sanitizeSettings(deepMerge(defaultSettings(), isPlainObject(doc) && isPlainObject(doc.settings) ? doc.settings : doc));
     } catch (e) {
-      return deepMerge(defaultSettings(), {});
+      return sanitizeSettings(deepMerge(defaultSettings(), {}));
     }
   }
 
@@ -212,6 +275,7 @@
     defaultSettings,
     resetSection,
     deepMerge,
+    sanitizeSettings,
     validateSettings,
     mergeSettings,
     serialize,

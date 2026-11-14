@@ -307,20 +307,32 @@
     let pool = eligible.slice();
     let seatIdxs = seats.map((_, j) => j);
 
-    // 6. training seat: reserve one seat for the lowest-composite healthy soldier
+    /*
+     * 6. training seat: reserve one seat for the lowest-composite healthy
+     * soldier — but only among soldiers ELIGIBLE for that seat's role (floors,
+     * encumbrance). If nobody eligible fits, the seat is not reserved and
+     * goes through the normal global assignment.
+     */
     if (g.trainingSeat && seats.length > 0 && eligible.length > 0) {
-      let seatIdx = typeof g.trainingSeatIndex === "number" && g.trainingSeatIndex >= 0 && g.trainingSeatIndex < seats.length ? g.trainingSeatIndex : 0;
-      let bestI = 0;
-      let bestC = Infinity;
+      const seatIdx = typeof g.trainingSeatIndex === "number" && g.trainingSeatIndex >= 0 && g.trainingSeatIndex < seats.length ? g.trainingSeatIndex : 0;
+      const trainRole = rolesById[seats[seatIdx]];
+      const candidates = [];
       for (let i = 0; i < pool.length; i++) {
-        const c = composite(normOf, pool[i]);
-        if (c < bestC) { bestC = c; bestI = i; }
+        if (!trainRole || roleEligibility(pool[i], trainRole, settings).ok) candidates.push(i);
       }
-      const trainee = pool[bestI];
-      picks[seatIdx] = { seatIndex: seatIdx, roleId: seats[seatIdx], role: rolesById[seats[seatIdx]], soldier: trainee, score: null, why: ["training seat: lowest composite in the eligible roster"], training: true };
-      pool = pool.filter((_, i) => i !== bestI);
-      seatIdxs = seatIdxs.filter((j) => j !== seatIdx);
-      notices.push("Training seat: " + trainee.name + " rides along in seat " + (seatIdx + 1) + " (" + (rolesById[seats[seatIdx]] || {}).name + ").");
+      if (candidates.length > 0) {
+        let bestI = candidates[0];
+        let bestC = composite(normOf, pool[bestI]);
+        for (const i of candidates) {
+          const c = composite(normOf, pool[i]);
+          if (c < bestC) { bestC = c; bestI = i; }
+        }
+        const trainee = pool[bestI];
+        picks[seatIdx] = { seatIndex: seatIdx, roleId: seats[seatIdx], role: trainRole, soldier: trainee, score: null, why: ["training seat: lowest composite eligible for this seat"], training: true };
+        pool = pool.filter((_, i) => i !== bestI);
+        seatIdxs = seatIdxs.filter((j) => j !== seatIdx);
+        notices.push("Training seat: " + trainee.name + " rides along in seat " + (seatIdx + 1) + " (" + (trainRole || {}).name + ").");
+      }
     }
 
     /*

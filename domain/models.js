@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.21.0";
+  const APP_VERSION = "0.22.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.22.0", note: "Full hardening pass (redteam): new tests/security.test.js (parser fuzzing, hostile settings imports, source scans for network/eval/cookie/HTML sinks + CSP checks, determinism fuzz, Hungarian vs brute force). Real bug found and fixed: the training seat could reserve a soldier who fails the seat's floors; it now picks the lowest-composite soldier among those eligible for the seat. Settings imports are validated and corrupted localStorage is sanitized." },
     { version: "0.21.0", note: "Squad tab decluttered: core flow is now load -> squad request -> suggested squad at the top; save inspection and the template editor moved into collapsed panels below (template apply dropdown stays visible)." },
     { version: "0.20.0", note: "Official in-game class icons (assets/icons/, extracted from the owner's own screenshot with permission) shown next to roles in the seat builder, template counters, pick cards and Roles tab." },
     { version: "0.19.0", note: "Empty seats are now explained directly on their seat card in the suggested squad (\"no eligible soldier for this seat\"), instead of as separate notice lines." },

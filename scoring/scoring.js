@@ -153,12 +153,12 @@
       if (role.strengthTraining) {
         // inverted on purpose: load past the STR-training threshold (game: 80%)
         const trainAt = (typeof g.strTrainThreshold === "number" ? g.strTrainThreshold : 0.8) * capacity;
-        if (!(kit > trainAt)) reasons.push("kit " + kit + " not above " + trainAt.toFixed(1) + " kg (" + Math.round((typeof g.strTrainThreshold === "number" ? g.strTrainThreshold : 0.8) * 100) + "% of capacity " + capacity.toFixed(1) + " kg) — strength_training wants overload to train STR");
+        if (!(kit > trainAt)) reasons.push("kit " + kit + " not above " + trainAt.toFixed(1) + " kg (" + Math.round((typeof g.strTrainThreshold === "number" ? g.strTrainThreshold : 0.8) * 100) + "% of capacity " + capacity.toFixed(1) + " kg); strength_training wants overload to train STR");
       } else {
         // avoid the TU penalty: load must stay at/below the limit fraction of capacity
         const limit = (typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 1.0) * capacity;
         if (kit > limit) {
-          reasons.push("kit " + kit + " kg > " + limit.toFixed(1) + " kg (" + Math.round((typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 1.0) * 100) + "% of capacity " + capacity.toFixed(1) + " kg) — TU penalty");
+          reasons.push("kit " + kit + " kg > " + limit.toFixed(1) + " kg (" + Math.round((typeof g.encumbranceLimit === "number" ? g.encumbranceLimit : 1.0) * 100) + "% of capacity " + capacity.toFixed(1) + " kg): TU penalty");
         }
       }
     } else if (kit > 0) {
@@ -317,7 +317,7 @@
         if (c < bestC) { bestC = c; bestI = i; }
       }
       const trainee = pool[bestI];
-      picks[seatIdx] = { seatIndex: seatIdx, roleId: seats[seatIdx], role: rolesById[seats[seatIdx]], soldier: trainee, score: null, why: ["training seat — lowest composite in the eligible roster"], training: true };
+      picks[seatIdx] = { seatIndex: seatIdx, roleId: seats[seatIdx], role: rolesById[seats[seatIdx]], soldier: trainee, score: null, why: ["training seat: lowest composite in the eligible roster"], training: true };
       pool = pool.filter((_, i) => i !== bestI);
       seatIdxs = seatIdxs.filter((j) => j !== seatIdx);
       notices.push("Training seat: " + trainee.name + " rides along in seat " + (seatIdx + 1) + " (" + (rolesById[seats[seatIdx]] || {}).name + ").");
@@ -386,7 +386,7 @@
           assignSeats(recEligible, emptySeatIdxs);
           const filled = emptySeatIdxs.filter((j) => picks[j] && picks[j].soldier);
           if (filled.length > 0) {
-            notices.push("Recruits used only for seat(s) " + filled.map((j) => (j + 1) + " (" + (rolesById[seats[j]] || {}).name + ")").join(", ") + " — no active-team soldier was eligible for " + (filled.length === 1 ? "this seat" : "these seats") + ".");
+            notices.push("Recruits used only for seat(s) " + filled.map((j) => (j + 1) + " (" + (rolesById[seats[j]] || {}).name + ")").join(", ") + ": no active-team soldier was eligible for " + (filled.length === 1 ? "this seat" : "these seats") + ".");
           }
         }
       }
@@ -396,14 +396,14 @@
     for (let j = 0; j < seats.length; j++) {
       const p = picks[j];
       if (p && !p.soldier) {
-        notices.push("Seat " + (j + 1) + " (" + p.role.name + "): no eligible soldier" + (recruitMode === "empty" ? " in the active team or the recruit pool" : "") + " — left empty.");
+        notices.push("Seat " + (j + 1) + " (" + p.role.name + "): no eligible soldier" + (recruitMode === "empty" ? " in the active team or the recruit pool" : "") + ", left empty.");
       }
     }
 
     // flag recruitable picks so the UI can mark them ("hire first")
     const recruitPicks = picks.filter((p) => p && p.soldier && p.soldier.inTeam === false);
     if (recruitPicks.length > 0) {
-      notices.push(recruitPicks.length + " suggested pick(s) are recruitable soldiers — hire them in-game before the mission (marked on their pick card).");
+      notices.push(recruitPicks.length + " suggested pick(s) are recruitable soldiers; hire them in-game before the mission (marked on their pick card).");
     }
 
     // bench: eligible soldiers not picked, best first

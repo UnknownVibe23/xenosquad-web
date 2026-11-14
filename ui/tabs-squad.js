@@ -1,6 +1,6 @@
 /*
- * ui/tabs-squad.js — Squad tab: save inspector, seat builder, and the planned
- * squad. Rendering only — the plan itself is computed by the pure
+ * ui/tabs-squad.js - Squad tab: save inspector, seat builder, and the planned
+ * squad. Rendering only - the plan itself is computed by the pure
  * XS.scoring.planSquad (milestone 3 uses the provisional greedy solver;
  * milestone 4 swaps in the Hungarian solver without touching this file).
  *
@@ -17,14 +17,14 @@
   /*
    * Tri-state recruit mode control, shared with the Settings tab (exposed as
    * XS.ui.recruitModeSelect). Values stored in settings.global.includeRecruits:
-   *   false   — off, active team only (default);
-   *   "empty" — recruits fill only seats no active-team soldier can fill;
-   *   true    — recruits compete for all seats.
+   *   false   - off, active team only (default);
+   *   "empty" - recruits fill only seats no active-team soldier can fill;
+   *   true    - recruits compete for all seats.
    */
   const RECRUIT_MODES = [
-    { value: "false", label: "off — active team only (default)" },
-    { value: "empty", label: "only empty seats — recruits fill seats no team soldier can" },
-    { value: "true", label: "all seats — recruits compete for every seat" },
+    { value: "false", label: "off: active team only (default)" },
+    { value: "empty", label: "only empty seats: recruits fill seats no team soldier can" },
+    { value: "true", label: "all seats: recruits compete for every seat" },
   ];
   function recruitModeSelect(state) {
     const mode = state.settings.global ? state.settings.global.includeRecruits : false;
@@ -61,9 +61,9 @@
     const header = info.header || {};
     const rows = [
       ["File name", state.lastFileName || "(unknown)"],
-      ["File size", state.lastBuffer ? state.lastBuffer.byteLength.toLocaleString() + " bytes" : "—"],
-      ["Save name (header)", header.saveName || "—"],
-      ["In-game date (header)", header.gameDate || "—"],
+      ["File size", state.lastBuffer ? state.lastBuffer.byteLength.toLocaleString() + " bytes" : "n/a"],
+      ["Save name (header)", header.saveName || "n/a"],
+      ["In-game date (header)", header.gameDate || "n/a"],
       ['Marker "' + (info.format ? info.format.marker : "SoldierFlags") + '" occurrences', String(info.markerCount)],
       ["Soldier blocks found", String((info.soldiers || []).length)],
     ];
@@ -80,7 +80,7 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "1 · Load a save file" }),
-        h("p", { text: "Drag a Xenonauts save file (.sav) anywhere onto this page, or pick one. The file is opened and parsed locally in your browser — it is never uploaded anywhere (there is no server)." }),
+        h("p", { text: "Drag a Xenonauts save file (.sav) anywhere onto this page, or pick one. The file is opened and parsed locally in your browser; it is never uploaded anywhere (there is no server)." }),
         h("p", {}, [
           h("label", { class: "button-like", text: "Choose a .sav file…" }, [
             h("input", {
@@ -119,7 +119,7 @@
     const roles = state.settings.roles || [];
 
     const select = h("select", { "aria-label": "Mission template" }, [
-      h("option", { value: "", text: "— apply a template…" }),
+      h("option", { value: "", text: "apply a template…" }),
       ...templates.map((tp) => h("option", { value: tp.id, text: tp.name + " (" + tp.seats.length + " seats)" })),
     ]);
 
@@ -175,7 +175,7 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Mission templates" }),
-        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Apply one, then tweak seats below. Edit a template with the +/− buttons per role — no typing needed." }),
+        h("p", { class: "muted", text: "Named seat compositions (community consensus for Xenonauts 1). Apply one, then tweak seats below. Edit a template with the +/− buttons per role; no typing needed." }),
         h("div", { class: "tpl-apply" }, [
           select,
           h("button", {
@@ -243,7 +243,7 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
-        h("h2", { text: "2 · Squad request — " + seats.length + " seat" + (seats.length === 1 ? "" : "s") }),
+        h("h2", { text: "2 · Squad request: " + seats.length + " seat" + (seats.length === 1 ? "" : "s") }),
         h("p", { class: "muted", text: "Build your squad: click a role to add a seat, change a seat's role in its dropdown, remove with ×. Team size is simply the number of seats (the CH-48 Charlie carries 8 by default). The squad below re-plans live." }),
         h("div", { class: "quick-add-row" }, quickAdd),
         h("div", { class: "seat-list" }, chips),
@@ -274,7 +274,7 @@
       return;
     }
     // One global assignment, solved optimally by the hand-written Hungarian
-    // algorithm (Kuhn-Munkres) — never greedy per-seat picking.
+    // algorithm (Kuhn-Munkres) - never greedy per-seat picking.
     const result = XS.scoring.planSquad(state.roster, state.settings, {
       seats: state.settings.seats,
       solver: XS.hungarian.hungarianMax,
@@ -282,7 +282,7 @@
     const filled = result.picks.filter((p) => p && p.soldier).length;
     const total = result.picks.length;
     const pickCards = result.picks.map((p) => {
-      if (!p) return h("div", { class: "pick empty" }, [h("span", { text: "— empty seat —" })]);
+      if (!p) return h("div", { class: "pick empty" }, [h("span", { text: "empty seat" })]);
       if (!p.soldier) {
         return h("div", { class: "pick empty" }, [
           h("span", { class: "pick-role", text: "Seat " + (p.seatIndex + 1) + " · " + (p.role ? p.role.name : p.roleId) }),
@@ -294,21 +294,21 @@
       return h("div", { class: "pick" + (p.training ? " training" : "") + (isRecruit ? " recruit-pick" : "") }, [
         h("div", { class: "pick-head" }, [
           h("span", { class: "pick-role", text: "Seat " + (p.seatIndex + 1) + " · " + p.role.name }),
-          isRecruit ? h("span", { class: "recruit-flag", text: "recruit — hire first" }) : null,
+          isRecruit ? h("span", { class: "recruit-flag", text: "recruit: hire first" }) : null,
           h("span", { class: "pick-name", text: s.name }),
         ]),
         h("div", { class: "pick-sub", text: (s.nationality || "") + (s.equipmentRole ? " · game role: " + s.equipmentRole : "") + (p.training ? " · training seat" : "") }),
         h("div", { class: "pick-why", text: p.why.join(" · ") }),
         h("div", {
           class: "pick-stats",
-          text: XS.domain.STATS.map((st) => st + " " + (s.stats[st] == null ? "—" : s.stats[st])).join("  "),
+          text: XS.domain.STATS.map((st) => st + " " + (s.stats[st] == null ? "n/a" : s.stats[st])).join("  "),
         }),
       ]);
     });
 
     main.appendChild(
       h("section", { class: "panel", id: "squad-result" }, [
-        h("h2", { text: "3 · Suggested squad — " + filled + " of " + total + " seats filled (optimal assignment via the Hungarian algorithm)" }),
+        h("h2", { text: "3 · Suggested squad: " + filled + " of " + total + " seats filled (optimal assignment via the Hungarian algorithm)" }),
         h("p", { class: "muted", text: "Updates live whenever seats, roles or settings change." }),
         recruitModeSelect(state),
         ...result.notices.map((n) => h("p", { class: "notice", text: n })),
@@ -331,7 +331,7 @@
       main.appendChild(
         h("section", { class: "panel" }, [
           h("h2", { text: "Ineligible (" + result.ineligible.length + ")" }),
-          h("ul", { class: "bench" }, result.ineligible.map((e) => h("li", { text: e.soldier.name + " — " + e.reasons.join("; ") }))),
+          h("ul", { class: "bench" }, result.ineligible.map((e) => h("li", { text: e.soldier.name + ": " + e.reasons.join("; ") }))),
         ])
       );
     }

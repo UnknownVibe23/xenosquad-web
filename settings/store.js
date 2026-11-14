@@ -40,7 +40,7 @@
         statCount: 12,
         floatScanBytes: 96,
         hpFloatOffset: 40, // bytes after the stats where the current-HP float sits
-        stringScanBytes: 512,
+        stringScanBytes: 2048, // window after the stats for anchored strings; wide enough that repeated loadout strings are not truncated at the edge
         teamStringPrefix: "weapon.", // block containing such a string = active team (recruits have armour only)
         // recruits are at full HP in-game; the HP-offset float in their block is a different field (verified) — keep false
         recruitHpIsFloat: false,

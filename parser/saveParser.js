@@ -52,7 +52,10 @@
     statCount: 12, // int32 values read after the short-nationality string
     floatScanBytes: 96, // fallback window scanned for a float if the offset read fails
     hpFloatOffset: 40, // bytes after the stats where the current-HP float sits (4-aligned)
-    stringScanBytes: 512, // window after the stats scanned for anchored strings
+    // window after the stats scanned for anchored strings; wide (2048) because
+    // the record repeats its loadout strings, and a too-small window truncates
+    // the last string at the edge (verified on real saves)
+    stringScanBytes: 2048,
     teamStringPrefix: "weapon.", // a block containing such a string = soldier is in the active team (recruits have armour only); "" disables the distinction
     /*
      * VERIFIED against the in-game recruit screen: recruitment-pool soldiers
@@ -344,7 +347,7 @@
     if (markers.length === 0) {
       return {
         ok: false,
-        error: 'No "' + format.marker + '" marker found — this does not look like a Xenonauts save file. (We check the content, not the file extension.)',
+        error: 'No "' + format.marker + '" marker found; this does not look like a Xenonauts save file. (We check the content, not the file extension.)',
         header,
         markerCount: 0,
         markers: [],
@@ -414,6 +417,9 @@
       rank = raw.postInts[rk.index];
       rankKind = "postInt";
     }
+    // the save stores each loadout string twice; keep the first occurrence only
+    const seen = new Set();
+    const loadout = (raw.strings.loadout || []).filter((v) => (seen.has(v) ? false : (seen.add(v), true)));
     return XS.domain.makeSoldier({
       id: "soldier-" + raw.index,
       name: raw.name || "Soldier " + (raw.index + 1),
@@ -427,7 +433,8 @@
       equipmentRole: raw.strings.role,
       regiment: raw.strings.regiment,
       experience: raw.strings.experience,
-      loadout: raw.strings.loadout,
+      armour: raw.strings.armour,
+      loadout,
       raw: { statInts: raw.statInts, rawFloats: raw.rawFloats, hpFloat: raw.hpFloat, postInts: raw.postInts, markerOffset: raw.markerOffset, rankKind },
     });
   }

@@ -1,5 +1,5 @@
 /*
- * ui/tabs-settings.js — Settings tab: every global parameter, the save-format
+ * ui/tabs-settings.js - Settings tab: every global parameter, the save-format
  * parameters, settings export/import (JSON round-trip), per-section resets,
  * reset-all, and the prominent "Clear all my data" button.
  *
@@ -55,16 +55,16 @@
       h("section", { class: "panel" }, [
         h("h2", { text: "Global behavior" }),
         group("Eligibility", [
-          sliderRow("Wounded threshold — soldiers below this fraction of HP cannot be fielded", g.woundedThreshold, thresholdOut, 0, 1, 0.05, (v) => { g.woundedThreshold = v; }),
+          sliderRow("Wounded threshold: soldiers below this fraction of HP cannot be fielded", g.woundedThreshold, thresholdOut, 0, 1, 0.05, (v) => { g.woundedThreshold = v; }),
         ]),
-        group("Encumbrance & strength — capacity = base + coef × STR (kg)", [
-          sliderRow("Encumbrance limit — kit above this fraction of capacity costs TUs (1.0 = only when over full capacity)", g.encumbranceLimit, encOut, 0, 1, 0.05, (v) => { g.encumbranceLimit = v; }),
+        group("Encumbrance & strength (capacity = base + coef × STR, in kg)", [
+          sliderRow("Encumbrance limit: kit above this fraction of capacity costs TUs (1.0 = only when over full capacity)", g.encumbranceLimit, encOut, 0, 1, 0.05, (v) => { g.encumbranceLimit = v; }),
           numField("Capacity base (kg)", g.strCapacityBase, (v) => { if (Number.isFinite(v)) { g.strCapacityBase = v; app.settingsChanged(); } }),
-          numField("Capacity per STR point (kg) — game default 0.3", g.strCapacityCoef, (v) => { if (Number.isFinite(v)) { g.strCapacityCoef = v; app.settingsChanged(); } }),
+          numField("Capacity per STR point (kg); game default 0.3", g.strCapacityCoef, (v) => { if (Number.isFinite(v)) { g.strCapacityCoef = v; app.settingsChanged(); } }),
           numField("STR training threshold (fraction of capacity; strength-training roles load past this to train STR)", g.strTrainThreshold, (v) => { if (Number.isFinite(v)) { g.strTrainThreshold = v; app.settingsChanged(); } }),
         ]),
         group("Psi era (late game)", [
-          checkField("Psi era — frontline roles then require the BRV floor below", g.psiEra, (v) => { g.psiEra = v; app.settingsChanged(); }),
+          checkField("Psi era: frontline roles then require the BRV floor below", g.psiEra, (v) => { g.psiEra = v; app.settingsChanged(); }),
           numField("BRV floor for frontline roles while psi era is on", g.psiBrvFloor, (v) => { if (Number.isFinite(v)) { g.psiBrvFloor = v; app.settingsChanged(); } }),
         ]),
         group("Training seat", [
@@ -83,7 +83,7 @@
     main.appendChild(
       h("section", { class: "panel" }, [
         h("h2", { text: "Sections" }),
-        h("p", { class: "muted", text: "Reset individual sections to their built-in defaults. Calibration is edited in the Calibrate tab; roles in Roles; templates and seats in the Squad tab." }),
+        h("p", { class: "muted", text: "Reset individual sections to their built-in defaults. Roles are edited in the Roles tab; templates and seats in the Squad tab. (The calibration/save-format UI is hidden because the verified mapping is built in; see the README to re-enable it.)" }),
         h("div", { class: "btn-row" }, [
           ["calibration", "Reset calibration"],
           ["roles", "Reset roles"],

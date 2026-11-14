@@ -1,5 +1,5 @@
 /*
- * ui/tabs-soldiers.js — Soldiers tab: the parsed roster with stats and wound
+ * ui/tabs-soldiers.js - Soldiers tab: the parsed roster with stats and wound
  * status. Rendering only; all parsing/scoring lives in the pure modules.
  */
 (function (root) {
@@ -8,7 +8,15 @@
   const { h } = XS.dom;
 
   function statCell(v) {
-    return v == null ? "—" : String(v);
+    return v == null ? "n/a" : String(v);
+  }
+
+  /* Loadout cell: weapon/ammo strings with their prefixes stripped, or the
+   * armour string for recruits (they carry armour only), or "none". */
+  function loadoutCell(s) {
+    if (s.loadout && s.loadout.length > 0) return s.loadout.map((v) => v.replace(/^(weapon|ammo)\./, "")).join(", ");
+    if (s.armour) return "armour only (" + s.armour.replace(/^armour\./, "") + ")";
+    return "none";
   }
 
   function renderSoldiers(main, state) {
@@ -24,9 +32,16 @@
 
     main.appendChild(
       h("section", { class: "panel" }, [
-        h("h2", { text: "Roster — " + state.roster.length + " soldiers (" + state.roster.filter((s) => s.inTeam !== false).length + " in team, " + state.roster.filter((s) => s.inTeam === false).length + " recruitable)" }),
+        h("h2", { text: "Roster: " + state.roster.length + " soldiers (" + state.roster.filter((s) => s.inTeam !== false).length + " in team, " + state.roster.filter((s) => s.inTeam === false).length + " recruitable)" }),
         (state.notices || []).length > 0 ? h("div", { class: "note-box" }, (state.notices || []).map((n) => h("p", { class: "note-inline", text: "Note: " + n }))) : null,
-        h("p", { class: "muted legend", text: "badge = team member (with transport seat) or recruit · red status = wounded: current HP below the threshold (Settings → Eligibility) — recruits are never wounded, in-game they are at full HP · stat columns are TU ACC RFL BRV STR HP" }),
+        h("ul", { class: "legend" }, [
+          h("li", { text: "badge = team member (with transport seat, e.g. Charlie - 1/13) or recruit (recruitment pool)" }),
+          h("li", { text: "red status = wounded: current HP below the threshold (Settings → Eligibility)" }),
+          h("li", { text: "recruits are never wounded: in-game they are at full HP" }),
+          h("li", { text: "HP column = current/max HP and wound %" }),
+          h("li", { text: "stat columns = TU ACC RFL BRV STR HP" }),
+          h("li", { text: "loadout = equipment strings from the save (armour only for recruits)" }),
+        ]),
       ])
     );
 
@@ -49,14 +64,14 @@
       const frac = XS.domain.hpFraction(s);
       const threshold = state.settings.global ? state.settings.global.woundedThreshold : 0.5;
       const wounded = !isRecruit && frac != null && frac < threshold;
-      const woundPct = frac == null ? "—" : Math.round(frac * 100) + "%";
+      const woundPct = frac == null ? "n/a" : Math.round(frac * 100) + "%";
       const teamLabel = isRecruit ? "recruit" : s.seat ? s.seat : "team";
       const hpText = isRecruit
         ? statCell(s.stats.HP) + " (full in-game)"
-        : s.currentHP == null || s.stats.HP == null ? "—" : Math.round(s.currentHP) + "/" + statCell(s.stats.HP) + " · " + woundPct;
+        : s.currentHP == null || s.stats.HP == null ? "n/a" : Math.round(s.currentHP) + "/" + statCell(s.stats.HP) + " · " + woundPct;
       let statusText;
       let statusClass = "";
-      if (isRecruit) statusText = "recruit — full HP in-game";
+      if (isRecruit) statusText = "recruit: full HP in-game";
       else if (frac == null) statusText = "HP unknown";
       else if (wounded) {
         statusText = "wounded: " + Math.round(frac * 100) + "% < " + Math.round(threshold * 100) + "% threshold";
@@ -70,7 +85,7 @@
         h("td", { class: "num" + (wounded ? " wounded" : ""), text: hpText }),
         h("td", { class: "status" + statusClass, text: statusText }),
         h("td", { class: "num", text: String(s.rank) }),
-        h("td", { class: "small wrap", text: s.loadout.join(", ") }),
+        h("td", { class: "small wrap", text: loadoutCell(s) }),
       ]);
     });
 

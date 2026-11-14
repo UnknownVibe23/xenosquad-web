@@ -319,7 +319,8 @@ tr.recruit td { color: var(--muted); }
 
 /* soldiers tab polish */
 .note-inline { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0; }
-.legend { font-size: 0.78rem; margin: 0.2rem 0 0.4rem; }
+ul.legend { font-size: 0.78rem; margin: 0.2rem 0 0.5rem; padding-left: 1.1rem; color: var(--muted); }
+ul.legend li { margin-bottom: 0.12rem; }
 table.roster tbody tr:nth-child(even) { background: #ffffff08; }
 
 /* roles editor: value box attached to its slider */

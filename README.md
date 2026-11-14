@@ -4,27 +4,27 @@ A squad planner for **Xenonauts 1** (Goldhawk Interactive, 2014) that runs entir
 browser as a static website. Drag a save file onto the page, get the mathematically optimal
 soldier-to-role assignment for a configurable set of squad seats.
 
-## Privacy — the headline feature
+## Privacy - the headline feature
 
 - **No backend, no uploads.** The save file is opened with the browser File API and parsed
   locally in memory. There is nowhere for it to be uploaded to.
-- **No analytics, no cookies, no external requests of any kind** — no fonts, images, scripts
+- **No analytics, no cookies, no external requests of any kind** - no fonts, images, scripts
   or fetches from CDNs. The page carries a strict `Content-Security-Policy` meta tag
   (`connect-src 'none'`, `script-src 'self'`, …) that makes any network request impossible.
 - **Settings only** are stored, in `localStorage` under the `xenosquad-web.` prefix. The
-  soldier roster (names are personal data) is **never** persisted — it lives in memory for
+  soldier roster (names are personal data) is **never** persisted - it lives in memory for
   the session only. Use **Clear all my data** (Settings tab) to wipe the namespace.
 
 ## Running it
 
 The site is plain HTML/CSS/JS with **zero dependencies and zero build step**:
 
-- open `index.html` directly from the filesystem (`file://` works — classic scripts, not ES
+- open `index.html` directly from the filesystem (`file://` works - classic scripts, not ES
   modules, are used for exactly this reason), or
 - serve the folder with any static server, or
 - publish it on **GitHub Pages** (below).
 
-### Publishing on GitHub Pages (via GitHub Actions — recommended)
+### Publishing on GitHub Pages (via GitHub Actions - recommended)
 
 No build step is needed: the deployed site is exactly the files in this repo.
 
@@ -58,56 +58,62 @@ No build step is needed: the deployed site is exactly the files in this repo.
 
 1. Find the save file your game writes: any `.sav` from your save slots (a dedicated slot
    producing `planner.sav` is handy). It sits in the Xenonauts save folder
-   `Documents/Xenonauts/` — under Windows your user Documents folder; through Proton/Wine it
+   `Documents/Xenonauts/` - under Windows your user Documents folder; through Proton/Wine it
    is `drive_c/users/<user>/Documents/Xenonauts/` inside the Wine prefix.
 2. Drag the `.sav` anywhere onto the page (or use the file picker; the `accept=".sav"`
-   attribute is only a hint — content is verified by scanning for the `SoldierFlags` marker).
-3. The **Squad** tab shows the parsed squad request; the **Soldiers** tab shows the roster;
-   **Roles** is your doctrine editor; **Settings** holds global parameters, export/import and
-   reset; **Calibrate** maps raw save slots to the six stats; **Help** documents everything.
+   attribute is only a hint - content is verified by scanning for the `SoldierFlags` marker).
+3. The **Squad** tab shows the save inspector, templates, seat builder and the planned squad;
+   **Soldiers** shows the roster; **Roles** is your doctrine editor; **Settings** holds global
+   parameters, export/import and resets (plus **Clear all my data**); **Help** documents
+   everything and lists the version history. (A Calibrate tab exists in the repo but is hidden:
+   the verified stat mapping is built in, see below.)
 
 ## Save format notes (verified against real `planner.sav` files + in-game screenshots)
 
 Binary serialization: 4-byte LE length + ASCII bytes for strings, 4-byte LE int32, 4-byte
 LE IEEE-754 float; `FF FF FF FF` is -1/null. Soldier records are located by scanning for the
-ASCII marker `SoldierFlags` (once per soldier — active team **and** recruitment pool alike). A record
+ASCII marker `SoldierFlags` (once per soldier - active team **and** recruitment pool alike). A record
 contains the nationality, full name, portrait string + int, the marker, a short nationality string,
-then **twelve** int32 stat values (six stats, each appearing twice — first copy current, second base),
+then **twelve** int32 stat values (six stats, each appearing twice - first copy current, second base),
 a zero-padding run containing one float at **stats-end + 40 bytes** (the current HP as a float; the
 HP stat itself is the max), then `regiment.*`, `experience.*`, an optional transport-seat string
-(`Charlie - 1/13`), the in-game equipment role string, `armour.*` and loadout strings.
+(`Charlie - 1/13`), the in-game equipment role string, `armour.*` and loadout strings. Loadout
+strings (`weapon.*`/`ammo.*`) appear twice per block in real saves; the parser keeps the first
+occurrence of each for display.
 
 **Stat slot order, verified against roster screenshots: slot0=TU, slot1=HP, slot2=STR, slot3=ACC,
-slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 — the save data overrides the assumed order; the
+slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 - the save data overrides the assumed order; the
 Calibrate tab can remap everything). **Team membership**: a block containing a `weapon.*` string is
 an active-team soldier; recruitment-pool soldiers have armour only (in the inspected saves this
 splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Recruit HP**:
 the recruit screen shows pool soldiers at full HP, so the float at the HP offset in a recruit block is
-a different field, not current HP — recruits are treated as HP-unknown and never wounded
+a different field, not current HP - recruits are treated as HP-unknown and never wounded
 (`format.recruitHpIsFloat`, default false). Rank is not
 cleanly locatable in the block, so the rank tie-breaker stays disabled with a visible notice unless
 mapped in Calibrate. The header stores the save name and in-game date. All offsets/counts/prefixes
 are settings, never hardcoded.
 
 **Calibrate tab / save-format UI are intentionally hidden for now** (the GOG build of Xenonauts 1
-is final — no patches are expected, so the verified mapping never needs changing). The parser
+is final - no patches are expected, so the verified mapping never needs changing). The parser
 still reads the mapping and all format parameters from the settings object, so nothing was
 deleted: to re-expose the UI after a hypothetical future build, re-add the `calibrate` entry to
-`TABS` in `ui/main.js`, the `ui/tabs-calibrate.js` script tag in `index.html`, and the
-"Advanced — save format parameters" block in `ui/tabs-settings.js`. If more save files ever show
+`TABS` in `ui/main.js`, the `ui/tabs-calibrate.js` script tag in `index.html`, and add a
+format-parameters section back to `ui/tabs-settings.js` (the `settings.format` object still
+carries marker/statCount/hpFloatOffset/stringScanBytes/teamStringPrefix/recruitHpIsFloat and is
+what the parser reads). If more save files ever show
 a different layout, share one (as `.txt`, never committed) and we decide then whether to bring the
 calibration UI back.
 
 ## Testing
 
-- **Browser (canonical):** open `tests/tests.html` — runs the whole suite (50 tests) and
+- **Browser (canonical):** open `tests/tests.html` - runs the whole suite and
   prints pass/fail per test. No server needed; works from `file://`.
 - **Node (convenience):** `node --test tests/node/suite.test.js` runs the same test files
   headlessly (the logic modules import cleanly in Node without a DOM).
 
 Covered: the parser against the synthetic fixture (marker scan, string/int/float decoding,
 record layout, calibration, robustness), exclusions/normalization/role scoring, the Hungarian
-solver (including the "two roles want the same soldier" case and — in tests only — brute-force
+solver (including the "two roles want the same soldier" case and - in tests only - brute-force
 optimality over random small matrices; the brute-force path never ships in production),
 assignment edge cases, and settings merge + export/import round-trip + namespaced storage.
 
@@ -124,7 +130,7 @@ Q&As, and r/Xenonauts class-stat threads. Key mechanics that shape the defaults:
 - Reaction fire is deterministic initiative = **RFL × weapon reaction modifier × %TU left** →
   frontline/door roles (breacher, assault) weight RFL highest; shotguns/pistols get 1.5×.
 - **Heavy weapons aim with min(STR, ACC)**, plus an extra penalty below 70 STR → MG/rocketeer
-  weight STR and ACC equally. The 70 is *not* used as a hard floor (too strict early — rosters
+  weight STR and ACC equally. The 70 is *not* used as a hard floor (too strict early - rosters
   rarely have 70+ STR then); the floor stays a sanity bar at 55 and the weights pick the best
   min(STR,ACC) soldier.
 - **Carrying capacity = 8 kg + 0.3 kg × STR** (gameconfig.xml); the TU penalty starts above
@@ -136,17 +142,17 @@ Q&As, and r/Xenonauts class-stat threads. Key mechanics that shape the defaults:
 - 8-man squad meta is 2 shield / 2 assault / 2 riflemen / 1 sniper / 1 heavy → the seeded
   "Crash site" template.
 
-Everything remains plain data in the Roles tab/Settings — change anything live.
+Everything remains plain data in the Roles tab/Settings - change anything live.
 
 ## Architecture
 
-- `parser/` — binary save extraction (pure: buffer in, data out)
-- `domain/` — plain-object models (Soldier, Role, SquadTemplate) + seeded defaults + version
-- `scoring/` — exclusions, normalization, role scoring, assignment; `scoring/hungarian.js`
+- `parser/` - binary save extraction (pure: buffer in, data out)
+- `domain/` - plain-object models (Soldier, Role, SquadTemplate) + seeded defaults + version
+- `scoring/` - exclusions, normalization, role scoring, assignment; `scoring/hungarian.js`
   is the hand-written Kuhn–Munkres solver
-- `settings/` — defaults, validation, merge, export/import, localStorage (storage injected)
-- `ui/` — rendering only; logic modules never touch the DOM
-- `tests/`, `tools/` — test suite + synthetic fixture generator
+- `settings/` - defaults, validation, merge, export/import, localStorage (storage injected)
+- `ui/` - rendering only; logic modules never touch the DOM
+- `tests/`, `tools/` - test suite + synthetic fixture generator
 
 All logic modules are importable by Node without a DOM. Every file uses a tiny UMD-style
 wrapper (classic `<script>` in the browser → works from `file://`; `module.exports` in Node).
@@ -155,9 +161,9 @@ wrapper (classic `<script>` in the browser → works from `file://`; `module.exp
 
 | Tab | What it does |
 | --- | --- |
-| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live; recruits tri-state (off by default / fill only empty seats / all seats) with notices and "hire first" badges |
-| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP cur/max, explicit Status column (red = wounded, with the threshold; recruits are never wounded — full HP in-game), game role, rank, loadout |
+| Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list - all live; recruits tri-state (off by default / fill only empty seats / all seats) with notices and "hire first" badges |
+| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP cur/max, explicit Status column (red = wounded, with the threshold; recruits are never wounded - full HP in-game), game role, rank, loadout |
 | Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
-| Settings | global parameters (wounded threshold, encumbrance, psi era, training seat), save-format parameters, export/import JSON, per-section resets, reset all, **Clear all my data** |
-| Calibrate | raw save slots → the six stats, current-HP and rank sources; per-soldier raw value table |
+| Settings | global parameters (wounded threshold, encumbrance & strength, psi era, training seat, recruits mode), export/import JSON, per-section resets, reset all, **Clear all my data** |
+| Calibrate | *hidden* (kept in the repo, re-enable per the note above): raw save slots → the six stats, current-HP and rank sources |
 | Help | quick start, recruits & wound status, scoring pipeline in brief, privacy note, full version history |

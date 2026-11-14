@@ -1,9 +1,9 @@
 /*
- * ui/dom.js — tiny DOM builder helper.
+ * ui/dom.js - tiny DOM builder helper.
  *
  * WHY: the UI modules only render; they never keep logic state. `h()` builds
  * elements from a plain spec so render functions stay declarative and there
- * are no inline event handlers in index.html (the CSP forbids them) — event
+ * are no inline event handlers in index.html (the CSP forbids them) - event
  * listeners are attached here via the `on` attribute key instead.
  */
 (function (root, factory) {

@@ -1,10 +1,10 @@
 /*
- * ui/main.js — application shell: tab bar, drag-and-drop / file picker for
+ * ui/main.js - application shell: tab bar, drag-and-drop / file picker for
  * the save file, global UI state, and the render loop.
  *
  * WHY THIS SHAPE: all logic modules are pure and stateless; the only mutable
  * state in the app lives here (current roster + last parsed buffer + current
- * settings). The roster is kept in memory ONLY — soldier names are personal
+ * settings). The roster is kept in memory ONLY - soldier names are personal
  * data and are never written to localStorage. Only settings are persisted.
  *
  * PRIVACY: this file performs no network requests of any kind. The save file

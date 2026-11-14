@@ -31,3 +31,4 @@ require("../scoring.test.js");
 require("../hungarian.test.js");
 require("../settings.test.js");
 require("../assignment.test.js");
+require("../texts.test.js");

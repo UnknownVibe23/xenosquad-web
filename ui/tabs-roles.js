@@ -1,5 +1,5 @@
 /*
- * ui/tabs-roles.js — Roles tab: the role doctrine editor.
+ * ui/tabs-roles.js - Roles tab: the role doctrine editor.
  *
  * Roles are data, not code: every property (weights, floors, kit_weight,
  * trains, frontline, strength_training) is editable here with live controls,
@@ -22,7 +22,7 @@
         h("h2", { text: "Role doctrine (" + roles.length + " roles)" }),
         h("p", {
           class: "muted",
-          text: "Each role defines stat weights (how much each stat matters for the seat), floors (minimum raw stats), kit weight (for the encumbrance check — STR capacity must cover it up to the encumbrance limit, unless strength training inverts the check), trains (stats the seat trains — second tie-breaker), and frontline (subject to the BRV floor while the psi era is on). Selection is purely stats-based; the game's own equipment role is only a display hint.",
+          text: "Each role defines stat weights (how much each stat matters for the seat), floors (minimum raw stats), kit weight (for the encumbrance check: STR capacity must cover it up to the encumbrance limit, unless strength training inverts the check), trains (stats the seat trains; second tie-breaker), and frontline (subject to the BRV floor while the psi era is on). Selection is purely stats-based; the game's own equipment role is only a display hint.",
         }),
         h("p", {}, [
           h("button", {
@@ -41,7 +41,7 @@
 
     for (const role of roles) {
       // Layout: [stat name][value box][slider] on ONE row per stat, single
-      // column — the value always directly follows its own stat name, never
+      // column - the value always directly follows its own stat name, never
       // lands beside the next stat's label.
       const weightRows = XS.domain.STATS.map((st) => {
         const out = h("output", { class: "w-out", text: String(role.weights[st] || 0) });
@@ -148,7 +148,7 @@
         h("div", { class: "f-grid" }, floorInputs),
         h("div", { class: "role-misc" }, [
           h("label", { class: "f-row" }, [
-            h("span", { class: "w-name", text: "kit weight", title: "Approximate equipment weight for the encumbrance check — editable, since your equipment (and so kit weight) changes over the campaign" }),
+            h("span", { class: "w-name", text: "kit weight", title: "Approximate equipment weight for the encumbrance check; editable, since your equipment (and so kit weight) changes over the campaign" }),
             h("input", {
               type: "number",
               min: "0",

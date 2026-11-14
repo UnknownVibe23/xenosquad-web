@@ -26,19 +26,20 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.16.0";
+  const APP_VERSION = "0.17.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
-    { version: "0.16.0", note: "Soldiers tab: explicit status column (red = wounded, with the threshold shown); recruits are never marked wounded — in-game they are at full HP, and the float in their save block is a different field, now treated as unknown. Slimmer Help tab with this version history. Mission-template cards: tidier spacing + seat count." },
+    { version: "0.17.0", note: "README reworked (no stale references). Soldiers tab: legend is now a line-per-entry list and the loadout column is cleaned up (save stores loadout strings twice; now deduped, prefixes stripped, no truncation; recruits show their armour). All user-facing texts are em-dash-free, guarded by a test. No em dashes in UI sources, enforced." },
+    { version: "0.16.0", note: "Soldiers tab: explicit status column (red = wounded, with the threshold shown); recruits are never marked wounded (in-game they are at full HP; the float in their save block is a different field, now treated as unknown). Slimmer Help tab with this version history. Mission-template cards: tidier spacing + seat count." },
     { version: "0.15.0", note: "Recruits mode is tri-state: off (default) / fill only empty seats / all seats. Recruit picks still get the \"hire first\" badge." },
     { version: "0.14.0", note: "Official in-game class names (Rifleman, Assault, Sniper, Scout, Shield, Heavy weapons, Rocketeer, Specialist); template editor with per-role +/- counters; seat builder with quick-add buttons and chips; new title \"Xeno Squad\"." },
     { version: "0.13.0", note: "Calibrate tab and save-format UI hidden (the GOG build is final; code kept, re-enable documented in README). Settings grouped; roster table layout fixed." },
     { version: "0.12.0", note: "Meta-aligned role weights; game-accurate encumbrance (capacity = 8 + 0.3 x STR kg, TU penalty above the limit, STR trains past 80%)." },
-    { version: "0.11.0", note: "Recruits picked for a squad are marked \"recruit — hire first\"." },
+    { version: "0.11.0", note: "Recruits picked for a squad are marked \"recruit: hire first\"." },
     { version: "0.10.0", note: "Roles editor: one column per stat (name, value box, slider)." },
     { version: "0.9.0", note: "Calibration verified against real saves; settings groups; roster table polish." },
     { version: "0.8.0", note: "\"Plan squad\" button jumps to the result; result header shows seats filled; tagline removed." },
@@ -124,7 +125,8 @@
       equipmentRole: init.equipmentRole || null,
       regiment: init.regiment || null,
       experience: init.experience || null,
-      loadout: Array.isArray(init.loadout) ? init.loadout.slice() : [],
+      armour: init.armour || null, // armour.* string (recruits carry armour only)
+      loadout: Array.isArray(init.loadout) ? init.loadout.slice() : [], // weapon.*/ammo.* strings, deduped by the parser
       raw: init.raw || null,
     };
   }

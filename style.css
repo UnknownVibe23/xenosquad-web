@@ -204,6 +204,7 @@ table.kv th { color: var(--muted); font-weight: 600; white-space: nowrap; }
   .tab-content { padding: 0.6rem; }
   .app-header h1 { font-size: 1.15rem; }
   .panel { padding: 0.75rem; }
+  .tpl-counters { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.35rem 0.5rem; }
 }
 
 /* tables (Soldiers tab, Calibrate raw view) */
@@ -295,8 +296,8 @@ ul.bench li { font-size: 0.88rem; margin-bottom: 0.15rem; word-break: break-word
 /* templates */
 .tpl-apply { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.6rem; }
 .tpl-apply select { flex: 1 1 14rem; min-width: 0; }
-.tpl-list { display: flex; flex-direction: column; gap: 0.4rem; }
-.tpl-card { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; background: var(--panel-alt); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; }
+.tpl-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.tpl-card { display: flex; background: var(--panel-alt); border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.7rem; }
 .tpl-name { flex: 1 1 10rem; min-width: 8rem; font-weight: 600; }
 .tpl-seats { flex: 2 1 16rem; min-width: 10rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
 .tpl-seats.invalid { border-color: var(--danger); }
@@ -379,14 +380,18 @@ td.wounded, tr.wounded td .num { color: var(--danger); }
 }
 .app-sub { margin: 0.1rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; }
 
-/* template editor: per-role +/- counters */
-.tpl-card { flex-direction: column; align-items: stretch; }
-.tpl-counters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.3rem 0.8rem; margin: 0.4rem 0; }
-.tpl-count { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; }
+/* template editor: name + seat count on one row, per-role +/- counters in an even grid */
+.tpl-card { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+.tpl-head { display: flex; align-items: center; gap: 0.6rem; }
+.tpl-head .tpl-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.tpl-total { flex: none; color: var(--muted); font-size: 0.75rem; white-space: nowrap; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 0.12rem 0.55rem; }
+.tpl-counters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.4rem 0.7rem; }
+.tpl-count { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
 .tpl-role-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tpl-num { min-width: 1.6rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0.2rem; }
-.count-btn { width: 1.9rem; padding: 0.15rem 0; font-size: 1rem; line-height: 1; border-radius: 6px; }
+.tpl-num { flex: none; width: 1.8rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0; }
+.count-btn { flex: none; width: 1.9rem; height: 1.65rem; padding: 0; font-size: 1rem; line-height: 1; border-radius: 6px; }
 .count-btn:disabled { opacity: 0.35; cursor: default; }
+.tpl-card .btn-row { margin: 0; }
 
 /* seat builder: quick-add buttons + seat chips */
 .quick-add-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }

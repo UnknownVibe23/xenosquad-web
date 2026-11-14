@@ -150,12 +150,15 @@
         ]);
       });
       return h("div", { class: "tpl-card" }, [
-        h("input", {
-          type: "text", class: "tpl-name", value: tp.name, "aria-label": "template name",
-          on: { change: (e) => { tp.name = e.target.value || tp.id; app.settingsChanged(); } },
-        }),
+        h("div", { class: "tpl-head" }, [
+          h("input", {
+            type: "text", class: "tpl-name", value: tp.name, "aria-label": "template name",
+            on: { change: (e) => { tp.name = e.target.value || tp.id; app.settingsChanged(); } },
+          }),
+          h("span", { class: "tpl-total", text: tp.seats.length + " seat" + (tp.seats.length === 1 ? "" : "s") }),
+        ]),
         h("div", { class: "tpl-counters" }, counters),
-        h("span", { class: "btn-row" }, [
+        h("div", { class: "btn-row" }, [
           h("button", { type: "button", text: "Apply", title: "Fill the seat builder with this template", on: { click: () => { state.settings.seats = tp.seats.slice(); app.settingsChanged(); } } }),
           h("button", {
             type: "button", text: "Duplicate",

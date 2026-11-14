@@ -222,6 +222,30 @@
     t.equal(res.soldiers.filter((s) => !s.inTeam).length, 3);
   });
 
+  test("parser: recruit blocks — the HP-offset float is NOT current HP (recruits are full HP in-game)", (t) => {
+    // Verified against the in-game recruit screen: recruits always show full
+    // HP, so the float at hpFloatOffset in a recruit block is a different
+    // field and must not be read as a wound.
+    const { bytes, spec } = XS.fixture.buildFixtureSave({ seed: 45, soldiers: 6, recruitEvery: 2 });
+    const settings = XS.settings.defaultSettings();
+    const res = XS.parser.parseSaveWithSettings(bufferOf(bytes), settings);
+    res.soldiers.forEach((s, i) => {
+      if (spec.soldiers[i].inTeam) {
+        t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "team soldier " + i + " keeps the float as current HP");
+      } else {
+        t.equal(s.currentHP, null, "recruit " + i + ": current HP unknown, not the float");
+      }
+    });
+    t.ok(res.notices.some((n) => /full HP/.test(n)), "notice explains the recruit HP handling");
+    // opt-in format flag keeps the raw float if a future build ever stores it
+    const s2 = XS.settings.defaultSettings();
+    s2.format.recruitHpIsFloat = true;
+    const res2 = XS.parser.parseSaveWithSettings(bufferOf(bytes), s2);
+    res2.soldiers.forEach((s, i) => {
+      if (!spec.soldiers[i].inTeam) t.approx(s.currentHP, spec.soldiers[i].hpFloat, 1e-4, "recruitHpIsFloat=true keeps the float");
+    });
+  });
+
   test("parser: teamStringPrefix is a setting — empty prefix disables the distinction", (t) => {
     const { bytes } = XS.fixture.buildFixtureSave({ seed: 45, soldiers: 6, recruitEvery: 2 });
     const res = XS.parser.parseSave(bufferOf(bytes), { teamStringPrefix: "" });

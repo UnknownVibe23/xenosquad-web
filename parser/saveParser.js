@@ -54,6 +54,15 @@
     hpFloatOffset: 40, // bytes after the stats where the current-HP float sits (4-aligned)
     stringScanBytes: 512, // window after the stats scanned for anchored strings
     teamStringPrefix: "weapon.", // a block containing such a string = soldier is in the active team (recruits have armour only); "" disables the distinction
+    /*
+     * VERIFIED against the in-game recruit screen: recruitment-pool soldiers
+     * are always shown at FULL HP, so the float at hpFloatOffset in a recruit
+     * block is NOT their current HP (a different field happens to sit there).
+     * For active-team blocks the same float IS current HP. Default false =
+     * treat recruit current HP as unknown (never wounded). Set true only if
+     * a future build ever stores real recruit HP in that float.
+     */
+    recruitHpIsFloat: false,
     roleNames: XS.domain ? XS.domain.EQUIPMENT_ROLES.slice() : [],
   };
 
@@ -439,12 +448,27 @@
       notices.push("Rank could not be located in the soldier block, so the rank tie-breaker is disabled (all ranks count as equal).");
     }
     let missingHP = true;
+    const chp = cal.currentHP || { kind: "float" };
+    const recruitHpIsFloat = settings.format && settings.format.recruitHpIsFloat === true;
+    let recruitHpNulled = false;
     const soldiers = res.soldiers.map((raw) => {
       const s = calibrateSoldier(raw, cal);
       if (typeof s.currentHP === "number") missingHP = false;
+      /*
+       * Recruits never deploy, so they are never wounded — in-game they are
+       * at full HP (verified on the recruit screen). The float at the HP
+       * offset in their block is a different field, so unless recruitHpIsFloat
+       * is enabled we treat their current HP as unknown instead of reading a
+       * bogus "wounded" value. Team soldiers keep the float as current HP.
+       */
+      if (s.inTeam === false && chp.kind === "float" && !recruitHpIsFloat && typeof s.currentHP === "number") {
+        s.currentHP = null;
+        recruitHpNulled = true;
+      }
       return s;
     });
     if (missingHP) notices.push("No current-HP value was found in the soldier blocks, so the wounded check is skipped. Check the 'current HP' mapping in the Calibrate tab.");
+    if (recruitHpNulled) notices.push("Recruitable soldiers are at full HP in-game; the float in their save block is a different field, so their current HP is shown as unknown and they are never treated as wounded.");
     return Object.assign({}, res, { soldiers, notices });
   }
 

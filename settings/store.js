@@ -42,6 +42,8 @@
         hpFloatOffset: 40, // bytes after the stats where the current-HP float sits
         stringScanBytes: 512,
         teamStringPrefix: "weapon.", // block containing such a string = active team (recruits have armour only)
+        // recruits are at full HP in-game; the HP-offset float in their block is a different field (verified) — keep false
+        recruitHpIsFloat: false,
         roleNames: XS.domain.EQUIPMENT_ROLES.slice(),
       },
       /*
@@ -124,6 +126,7 @@
       if (!Number.isInteger(obj.format.statCount) || obj.format.statCount < 0 || obj.format.statCount > 64) errors.push("format.statCount must be an integer in 0..64");
       if (!Number.isInteger(obj.format.hpFloatOffset) || obj.format.hpFloatOffset < 0 || obj.format.hpFloatOffset > 4096) errors.push("format.hpFloatOffset must be an integer in 0..4096");
       if (typeof obj.format.teamStringPrefix !== "string") errors.push("format.teamStringPrefix must be a string");
+      if (obj.format.recruitHpIsFloat !== undefined && typeof obj.format.recruitHpIsFloat !== "boolean") errors.push("format.recruitHpIsFloat must be a boolean");
     }
     if (obj.calibration !== undefined) {
       if (!isPlainObject(obj.calibration)) errors.push("calibration must be an object");

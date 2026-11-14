@@ -26,7 +26,30 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.15.0";
+  const APP_VERSION = "0.16.0";
+
+  /*
+   * Changelog, newest first. Rendered as a table at the bottom of the Help
+   * tab; keep each note to one line. APP_VERSION must match the first entry.
+   */
+  const VERSION_HISTORY = [
+    { version: "0.16.0", note: "Soldiers tab: explicit status column (red = wounded, with the threshold shown); recruits are never marked wounded — in-game they are at full HP, and the float in their save block is a different field, now treated as unknown. Slimmer Help tab with this version history. Mission-template cards: tidier spacing + seat count." },
+    { version: "0.15.0", note: "Recruits mode is tri-state: off (default) / fill only empty seats / all seats. Recruit picks still get the \"hire first\" badge." },
+    { version: "0.14.0", note: "Official in-game class names (Rifleman, Assault, Sniper, Scout, Shield, Heavy weapons, Rocketeer, Specialist); template editor with per-role +/- counters; seat builder with quick-add buttons and chips; new title \"Xeno Squad\"." },
+    { version: "0.13.0", note: "Calibrate tab and save-format UI hidden (the GOG build is final; code kept, re-enable documented in README). Settings grouped; roster table layout fixed." },
+    { version: "0.12.0", note: "Meta-aligned role weights; game-accurate encumbrance (capacity = 8 + 0.3 x STR kg, TU penalty above the limit, STR trains past 80%)." },
+    { version: "0.11.0", note: "Recruits picked for a squad are marked \"recruit — hire first\"." },
+    { version: "0.10.0", note: "Roles editor: one column per stat (name, value box, slider)." },
+    { version: "0.9.0", note: "Calibration verified against real saves; settings groups; roster table polish." },
+    { version: "0.8.0", note: "\"Plan squad\" button jumps to the result; result header shows seats filled; tagline removed." },
+    { version: "0.7.0", note: "Fixed missing script tags (crash on load); 60-soldier scale test; platform-neutral save-location docs." },
+    { version: "0.6.0", note: "Team vs recruit detection (weapon.* string); recruits excluded from planning by default; verified stat order TU,HP,STR,ACC,RFL,BRV and current-HP float." },
+    { version: "0.5.0", note: "Full adjustability: Roles/Settings editors, templates, persistence, export/import, resets, Clear all my data, CSP, Help tab, responsive layout." },
+    { version: "0.4.0", note: "Hand-written Hungarian (Kuhn-Munkres) solver replaces greedy; per-pick \"why\" lines; bench; brute-force optimality tests." },
+    { version: "0.3.0", note: "Scoring core: exclusions, normalization, weighted role scores, provisional greedy assignment." },
+    { version: "0.2.0", note: "Binary save parser (marker scan, record extraction), Calibrate tab, synthetic fixture generator, first tests." },
+    { version: "0.1.0", note: "Static skeleton: tabs, drag-and-drop, save inspector; deployable to GitHub Pages." },
+  ];
 
   /* Repository URL shown in the footer (a plain link — the app itself never
    * makes any network request). */
@@ -176,6 +199,7 @@
     EQUIPMENT_ROLES,
     makeRole,
     makeTemplate,
+    VERSION_HISTORY,
     makeSoldier,
     defaultRoles,
     defaultTemplates,

@@ -36,6 +36,18 @@
     t.ok(elig[3].eligible, "missing HP -> check skipped, eligible");
   });
 
+  test("exclusions: recruitable soldiers (inTeam false) are never wounded-excluded", (t) => {
+    const s = settingsWith({ woundedThreshold: 0.5 });
+    const recruit = mkSoldier("rookie", { HP: 50 }, 5); // 10% HP — would be wounded if the check applied
+    recruit.inTeam = false;
+    const team = mkSoldier("vet", { HP: 50 }, 5);
+    team.inTeam = true;
+    const elig = XS.scoring.computeEligibility([recruit, team], s);
+    t.ok(elig[0].eligible, "recruit at 10% HP is still eligible (recruits never deploy, so never wounded)");
+    t.notOk(elig[1].eligible, "team soldier at 10% HP is wounded");
+    t.ok(/wounded/.test(elig[1].reasons[0]));
+  });
+
   test("normalization: min-max across the eligible roster; equal stats normalize to 0", (t) => {
     const roster = [mkSoldier("a", { ACC: 40 }), mkSoldier("b", { ACC: 60 }), mkSoldier("c", { ACC: 50 })];
     const n = XS.scoring.normalizeRoster(roster).norm;

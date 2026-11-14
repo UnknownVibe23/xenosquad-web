@@ -60,9 +60,17 @@
     const threshold = settings.global ? settings.global.woundedThreshold : 0.5;
     return soldiers.map((soldier) => {
       const reasons = [];
-      const frac = domain().hpFraction(soldier);
-      if (frac != null && frac < threshold) {
-        reasons.push("wounded (" + Math.round(frac * 100) + "% HP < " + Math.round(threshold * 100) + "% threshold)");
+      /*
+       * Recruits (inTeam === false) never deploy, so they are never wounded —
+       * skip the HP check for them entirely, even if a current-HP value was
+       * mapped (the parser already nulls the float for them; this guard also
+       * covers slot-based HP calibration).
+       */
+      if (soldier.inTeam !== false) {
+        const frac = domain().hpFraction(soldier);
+        if (frac != null && frac < threshold) {
+          reasons.push("wounded (" + Math.round(frac * 100) + "% HP < " + Math.round(threshold * 100) + "% threshold)");
+        }
       }
       return { soldier, eligible: reasons.length === 0, reasons };
     });

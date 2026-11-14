@@ -81,7 +81,10 @@ HP stat itself is the max), then `regiment.*`, `experience.*`, an optional trans
 slot4=RFL, slot5=BRV** (HP is slot 1, not slot 5 — the save data overrides the assumed order; the
 Calibrate tab can remap everything). **Team membership**: a block containing a `weapon.*` string is
 an active-team soldier; recruitment-pool soldiers have armour only (in the inspected saves this
-splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). Rank is not
+splits 22 soldiers into exactly 10 team / 12 recruits, matching the in-game screens). **Recruit HP**:
+the recruit screen shows pool soldiers at full HP, so the float at the HP offset in a recruit block is
+a different field, not current HP — recruits are treated as HP-unknown and never wounded
+(`format.recruitHpIsFloat`, default false). Rank is not
 cleanly locatable in the block, so the rank tie-breaker stays disabled with a visible notice unless
 mapped in Calibrate. The header stores the save name and in-game date. All offsets/counts/prefixes
 are settings, never hardcoded.
@@ -153,8 +156,8 @@ wrapper (classic `<script>` in the browser → works from `file://`; `module.exp
 | Tab | What it does |
 | --- | --- |
 | Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list — all live; recruits tri-state (off by default / fill only empty seats / all seats) with notices and "hire first" badges |
-| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP/wound status, game role, rank, loadout |
+| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP cur/max, explicit Status column (red = wounded, with the threshold; recruits are never wounded — full HP in-game), game role, rank, loadout |
 | Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
 | Settings | global parameters (wounded threshold, encumbrance, psi era, training seat), save-format parameters, export/import JSON, per-section resets, reset all, **Clear all my data** |
 | Calibrate | raw save slots → the six stats, current-HP and rank sources; per-soldier raw value table |
-| Help | usage guide, calibration flow, scoring pipeline, privacy note, version |
+| Help | quick start, recruits & wound status, scoring pipeline in brief, privacy note, full version history |

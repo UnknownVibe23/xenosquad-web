@@ -29,6 +29,7 @@
     t.equal(d.format.statCount, 12);
     t.equal(d.format.hpFloatOffset, 40);
     t.equal(d.format.teamStringPrefix, "weapon.");
+    t.equal(d.format.recruitHpIsFloat, false, "recruit HP float is not current HP by default (verified in-game)");
     t.deepEqual(d.calibration.statSlots, { TU: 0, HP: 1, STR: 2, ACC: 3, RFL: 4, BRV: 5 });
     t.equal(d.global.woundedThreshold, 0.5);
     t.equal(d.global.encumbranceLimit, 1.0);
@@ -83,6 +84,10 @@
     t.ok(XS.settings.validateSettings(withMode(true)).length === 0);
     t.ok(XS.settings.validateSettings(withMode("sometimes")).some((e) => /includeRecruits/.test(e)), "other values rejected");
     t.ok(XS.settings.validateSettings(withMode(1)).some((e) => /includeRecruits/.test(e)), "numbers rejected");
+    t.ok(XS.settings.validateSettings({ format: { recruitHpIsFloat: 1 } }).some((e) => /recruitHpIsFloat/.test(e)), "non-boolean recruitHpIsFloat rejected");
+    const flagOn = XS.settings.defaultSettings();
+    flagOn.format.recruitHpIsFloat = true;
+    t.ok(XS.settings.validateSettings(flagOn).length === 0, "boolean recruitHpIsFloat accepted");
     // old boolean exports from previous versions still import fine
     const d = XS.settings.defaultSettings();
     d.global.includeRecruits = "empty";
@@ -124,6 +129,17 @@
     t.notOk(XS.settings.deserialize(JSON.stringify({ app: "xenosquad-web", settings: { format: { marker: "" } } })).ok, "invalid marker");
     const errs = XS.settings.deserialize("nope").errors;
     t.ok(errs[0].indexOf("JSON") !== -1, "error mentions JSON: " + errs[0]);
+  });
+
+  test("settings: VERSION_HISTORY is newest-first, unique, and starts at APP_VERSION", (t) => {
+    const vh = XS.domain.VERSION_HISTORY;
+    t.ok(Array.isArray(vh) && vh.length >= 10, "history covers the milestones");
+    t.equal(vh[0].version, XS.domain.APP_VERSION, "first entry is the running version (shown in footer + Help)");
+    vh.forEach((e) => {
+      t.ok(/^\d+\.\d+\.\d+$/.test(e.version), "semver-ish version: " + e.version);
+      t.ok(typeof e.note === "string" && e.note.length > 0, "every entry has a note");
+    });
+    t.equal(new Set(vh.map((e) => e.version)).size, vh.length, "versions are unique");
   });
 
   test("settings: storage round-trip under the namespace prefix, roster never stored", (t) => {

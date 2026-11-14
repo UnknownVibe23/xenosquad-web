@@ -220,8 +220,8 @@ wrapper (classic `<script>` in the browser → works from `file://`; `module.exp
 | Tab | What it does |
 | --- | --- |
 | Squad | save inspector, mission templates, seat builder (per-seat roles, add/remove, default 8), optimal squad with per-pick "why", bench, ineligible list - all live; recruits tri-state (off by default / fill only empty seats / all seats) with notices and "hire first" badges |
-| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP cur/max, explicit Status column (red = wounded, with the threshold; recruits are never wounded - full HP in-game), game role, rank, loadout |
+| Soldiers | parsed roster: team/recruit badge + transport seat, stats, HP cur/max, explicit Status column (red = wounded, with the threshold; recruits are never wounded - full HP in-game), game role, rank, loadout; plus a **dismiss-candidates list**: hired soldiers below a fraction of the team median composite (default 70%, adjustable in Settings), each with the flat $10,000/month vanilla salary they cost |
 | Roles | doctrine editor: weights, floors, kit weight, trains, frontline, strength training; add/duplicate/rename/delete |
-| Settings | global parameters (wounded threshold, encumbrance & strength, psi era, training seat, recruits mode), export/import JSON, per-section resets, reset all, **Clear all my data** |
+| Settings | global parameters (wounded threshold, encumbrance & strength, psi era, training seat, recruits mode, dismissal list threshold/upkeep/cap), export/import JSON, per-section resets, reset all, **Clear all my data** |
 | Calibrate | *hidden* (kept in the repo, re-enable per the note above): raw save slots → the six stats, current-HP and rank sources |
 | Help | quick start, recruits & wound status, scoring pipeline in brief, privacy note, full version history |

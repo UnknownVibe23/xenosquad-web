@@ -99,6 +99,18 @@
         trainingSeatIndex: -1, // which seat (-1 = first seat)
         includeRecruits: false, // tri-state: false = active team only (default); "empty" = recruits fill only seats no team soldier can fill; true = recruits compete for all seats
       },
+      /*
+       * Dismiss list (Soldiers tab): flag HIRED soldiers (active team) whose
+       * composite stat score is below belowFraction x the team's median
+       * composite. In vanilla Xenonauts 1 every soldier costs a flat
+       * $10,000/month salary (Xenonauts wiki; not rank-dependent), so
+       * soldierUpkeep is that flat upkeep. maxListed caps the list (0 = all).
+       */
+      dismiss: {
+        belowFraction: 0.7, // flag in-team soldiers below 70% of the team median composite
+        soldierUpkeep: 10000, // $/month per hired soldier (vanilla X1 flat salary, wiki)
+        maxListed: 0, // 0 = no cap
+      },
       roles: XS.domain.defaultRoles(),
       /* The seat builder: a role id per seat. Defaults to 8 seats. */
       seats: ["breacher", "breacher", "assault", "assault", "rifleman", "rifleman", "sniper", "mg"],
@@ -107,7 +119,7 @@
   }
 
   /* Sections that have a per-section reset button in the Settings tab. */
-  const SECTIONS = ["format", "calibration", "global", "roles", "templates", "seats"];
+  const SECTIONS = ["format", "calibration", "global", "dismiss", "roles", "templates", "seats"];
 
   /*
    * Version migrations. deepMerge keeps saved values for keys that exist in
@@ -215,6 +227,11 @@
     for (const k of GLOBAL_BOOLS) if (typeof g[k] !== "boolean") g[k] = d.global[k];
     if ([false, true, "empty"].indexOf(g.includeRecruits) === -1) g.includeRecruits = d.global.includeRecruits;
     settings.global = g;
+    const dd = isPlainObject(settings.dismiss) ? settings.dismiss : {};
+    if (typeof dd.belowFraction !== "number" || !Number.isFinite(dd.belowFraction) || dd.belowFraction < 0 || dd.belowFraction > 1) dd.belowFraction = d.dismiss.belowFraction;
+    if (typeof dd.soldierUpkeep !== "number" || !Number.isFinite(dd.soldierUpkeep) || dd.soldierUpkeep < 0 || dd.soldierUpkeep > 1e9) dd.soldierUpkeep = d.dismiss.soldierUpkeep;
+    if (!Number.isInteger(dd.maxListed) || dd.maxListed < 0 || dd.maxListed > 100000) dd.maxListed = d.dismiss.maxListed;
+    settings.dismiss = dd;
     const f = isPlainObject(settings.format) ? settings.format : {};
     if (typeof f.marker !== "string" || f.marker.length === 0 || f.marker.length > 64) f.marker = d.format.marker;
     if (!Number.isInteger(f.statCount) || f.statCount < 0 || f.statCount > 64) f.statCount = d.format.statCount;
@@ -292,6 +309,14 @@
       }
       if (obj.global.trainingSeatIndex !== undefined && (!Number.isInteger(obj.global.trainingSeatIndex) || obj.global.trainingSeatIndex < -1 || obj.global.trainingSeatIndex > 10000)) {
         errors.push("global.trainingSeatIndex must be an integer in -1..10000");
+      }
+    }
+    if (obj.dismiss !== undefined) {
+      if (!isPlainObject(obj.dismiss)) errors.push("dismiss must be an object");
+      else {
+        if (obj.dismiss.belowFraction !== undefined && (typeof obj.dismiss.belowFraction !== "number" || !Number.isFinite(obj.dismiss.belowFraction) || obj.dismiss.belowFraction < 0 || obj.dismiss.belowFraction > 1)) errors.push("dismiss.belowFraction must be a number in [0, 1]");
+        if (obj.dismiss.soldierUpkeep !== undefined && (typeof obj.dismiss.soldierUpkeep !== "number" || !Number.isFinite(obj.dismiss.soldierUpkeep) || obj.dismiss.soldierUpkeep < 0 || obj.dismiss.soldierUpkeep > 1e9)) errors.push("dismiss.soldierUpkeep must be a number in [0, 1e9]");
+        if (obj.dismiss.maxListed !== undefined && (!Number.isInteger(obj.dismiss.maxListed) || obj.dismiss.maxListed < 0 || obj.dismiss.maxListed > 100000)) errors.push("dismiss.maxListed must be an integer in 0..100000");
       }
     }
     if (obj.roles !== undefined) {

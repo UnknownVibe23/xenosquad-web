@@ -33,10 +33,12 @@
     const s = state.settings;
     const g = s.global;
     const f = s.format;
+    const d = s.dismiss;
 
     // ---- global behavior (grouped) ----
     const thresholdOut = h("output", { class: "w-out", text: String(g.woundedThreshold) });
     const encOut = h("output", { class: "w-out", text: String(g.encumbranceLimit) });
+    const dismissOut = h("output", { class: "w-out", text: String(d.belowFraction) });
     const sliderRow = (label, value, out, min, max, step, onInput) =>
       h("label", { class: "set-row" }, [
         h("span", { text: label }),
@@ -75,6 +77,11 @@
           XS.ui.recruitModeSelect(state),
           h("p", { class: "muted", text: "Picked recruits are always marked 'hire first' on their pick card, so you know to hire them in-game before the mission." }),
         ]),
+        group("Dismissal list (Soldiers tab)", [
+          sliderRow("Flag hired soldiers below this fraction of the active team's median composite", d.belowFraction, dismissOut, 0, 1, 0.05, (v) => { d.belowFraction = v; }),
+          numField("Monthly upkeep per hired soldier ($; vanilla X1 is a flat 10000)", d.soldierUpkeep, (v) => { if (Number.isFinite(v) && v >= 0) { d.soldierUpkeep = v; app.settingsChanged(); } }),
+          numField("Max names on the dismiss list (0 = no cap)", d.maxListed, (v) => { if (Number.isFinite(v)) { d.maxListed = Math.trunc(v); app.settingsChanged(); } }),
+        ]),
         h("p", {}, [h("button", { type: "button", text: "Reset global to defaults", on: { click: () => { XS.settings.resetSection(s, "global"); app.settingsChanged(); } } })]),
       ])
     );
@@ -86,6 +93,7 @@
         h("p", { class: "muted", text: "Reset individual sections to their built-in defaults. Roles are edited in the Roles tab; templates and seats in the Squad tab. (The calibration/save-format UI is hidden because the verified mapping is built in; see the README to re-enable it.)" }),
         h("div", { class: "btn-row" }, [
           ["calibration", "Reset calibration"],
+          ["dismiss", "Reset dismissal"],
           ["roles", "Reset roles"],
           ["templates", "Reset templates"],
           ["seats", "Reset seats"],
@@ -158,7 +166,7 @@
             text: "Reset all to defaults",
             on: {
               click: () => {
-                if (!root.confirm("Reset ALL settings (roles, templates, seats, format, calibration, global) to defaults?")) return;
+                if (!root.confirm("Reset ALL settings (roles, templates, seats, format, calibration, global, dismissal) to defaults?")) return;
                 state.settings = XS.settings.defaultSettings();
                 app.settingsChanged();
                 status.textContent = "All settings reset to defaults.";

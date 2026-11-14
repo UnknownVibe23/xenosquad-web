@@ -95,6 +95,33 @@
 
     const wrap = h("div", { class: "table-wrap" }, [h("table", { class: "roster" }, [h("thead", {}, [head]), h("tbody", {}, rows)])]);
     main.appendChild(h("section", { class: "panel" }, [wrap]));
+
+    // dismiss candidates: hired soldiers not worth the upkeep (pure logic in
+    // XS.scoring.dismissList; thresholds in settings.dismiss)
+    const dm = state.settings.dismiss || {};
+    const dismiss = XS.scoring.dismissList(state.roster, state.settings);
+    const belowPct = Math.round((typeof dm.belowFraction === "number" ? dm.belowFraction : 0.7) * 100);
+    main.appendChild(
+      h("section", { class: "panel" }, [
+        h("h2", { text: "Dismiss candidates: " + dismiss.entries.length + " of " + dismiss.teamSize + " hired soldiers below " + belowPct + "% of the team median" }),
+        h("p", {
+          class: "muted",
+          text: "Hired (active-team) soldiers whose composite stat score is below " + belowPct + "% of the active team's median composite (" + dismiss.median.toFixed(2) + "). In vanilla Xenonauts 1 every hired soldier costs a flat $" + dismiss.upkeep.toLocaleString() + "/month (wiki), so these are not worth the upkeep. Recruits are never listed (free until hired). This is a list to act on in-game; the app cannot dismiss anyone itself. Adjust the threshold, upkeep and cap in Settings, group \"Dismissal list\".",
+        }),
+        dismiss.entries.length === 0
+          ? h("p", { class: "muted", text: "Nobody is below the threshold right now." })
+          : h("ul", {
+              class: "bench",
+            }, dismiss.entries.map((e) =>
+              h("li", {}, [
+                h("strong", { text: e.soldier.name }),
+                h("span", {
+                  text: "  composite " + e.composite.toFixed(2) + " (" + Math.round(e.fraction * 100) + "% of median " + e.median.toFixed(2) + "), " + e.rankLabel + ", $" + e.upkeep.toLocaleString() + "/mo" + (e.hpFraction != null ? ", HP " + Math.round(e.hpFraction * 100) + "%" : "") + "; candidate to dismiss in-game",
+                }),
+              ])
+            )),
+      ])
+    );
   }
 
   XS.ui = XS.ui || {};

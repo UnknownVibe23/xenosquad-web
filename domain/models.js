@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.30.0";
+  const APP_VERSION = "0.31.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.31.0", note: "New dismiss-candidates list on the Soldiers tab: hired (active-team) soldiers whose composite stat score is below a fraction of the team's median composite (default 70%) are listed worst-first with rank, HP, and the flat $10,000/month vanilla salary they cost, since they are not worth the upkeep. Recruits are never listed. Threshold, upkeep and list cap are adjustable in Settings (new 'dismiss' section, resettable, validated on import). Pure logic XS.scoring.dismissList, deterministic." },
     { version: "0.30.0", note: "UI/UX polish: in-game role icons are bigger everywhere (seat chips, quick-add and template counters 20px, pick cards 22px, Roles tab 28px) and align via vertical-align middle; header with the tab bar is now sticky so tabs stay reachable on long pages (incl. vertical 1080x1920); hover states on tabs/buttons/summaries, visible keyboard focus outlines, slightly larger touch targets for the +/- counters and seat remove buttons." },
     { version: "0.29.0", note: "New seeded mission templates: a 6-soldier + Hunter draft variant for each of the 5 default templates (the Hunter scout car fills 2 transport seats, so 6 + Hunter = a full CH-48 Charlie). Compositions researched from community meta per mission type (Hunter's gun/rockets replace the mg/rocketeer seat where useful, reapers cannot hurt it, it cannot enter tight UFO/base interiors, open maps favor the sniper). Existing installs get the new templates appended on upgrade without losing their custom ones." },
     { version: "0.28.0", note: "Save-reading hardening: current HP also falls back to the seat-anchored int when a soldier block has no known role string; the load-time sanity check additionally flags duplicate soldier names and a malformed header in-game date. README now lists the verified real-save sample matrix. All 4 real vanilla saves still parse with zero anomalies." },

@@ -433,6 +433,48 @@
     return { picks, bench, ineligible, notices };
   }
 
+  /* ---------- dismiss list (hired soldiers not worth the upkeep) ---------- */
+
+  /*
+   * dismissList(soldiers, settings) -> { entries, threshold, median, teamSize, upkeep }.
+   *
+   * The "dismiss" idea: in vanilla Xenonauts 1 every hired soldier costs a flat
+   * $10,000/month salary (Xenonauts wiki; NOT rank-dependent), so a hired
+   * soldier whose stats are far below the rest of the team is not worth the
+   * upkeep. We reuse the planning pipeline's min-max normalization + composite
+   * (same scale as the bench order), take the active team's MEDIAN composite,
+   * and flag every in-team soldier below settings.dismiss.belowFraction x
+   * median. Recruits are never listed (they cost nothing until hired).
+   * Pure and deterministic: same roster + same settings -> same list.
+   */
+  function dismissList(soldiers, settings) {
+    const d = (settings && settings.dismiss) || {};
+    const belowFraction = typeof d.belowFraction === "number" && Number.isFinite(d.belowFraction) ? d.belowFraction : 0.7;
+    const upkeep = typeof d.soldierUpkeep === "number" && Number.isFinite(d.soldierUpkeep) ? d.soldierUpkeep : 10000;
+    const maxListed = Number.isInteger(d.maxListed) && d.maxListed > 0 ? d.maxListed : 0;
+    const team = (soldiers || []).filter((s) => s.inTeam !== false);
+    if (team.length === 0) return { entries: [], threshold: 0, median: 0, teamSize: 0, upkeep };
+    const norms = normalizeRoster(team);
+    const withC = team.map((s) => ({ soldier: s, composite: composite(norms.norm, s) }));
+    const asc = withC.slice().sort((a, b) => a.composite - b.composite);
+    const median = asc[Math.floor(asc.length / 2)].composite; // upper median, deterministic
+    const threshold = belowFraction * median;
+    let entries = withC
+      .filter((x) => x.composite < threshold)
+      .sort((a, b) => a.composite - b.composite || (a.soldier.id < b.soldier.id ? -1 : 1))
+      .map((x) => ({
+        soldier: x.soldier,
+        composite: x.composite,
+        median,
+        fraction: median > 0 ? x.composite / median : 0,
+        rankLabel: domain().rankLabel(x.soldier.rank),
+        upkeep,
+        hpFraction: domain().hpFraction(x.soldier),
+      }));
+    if (maxListed > 0) entries = entries.slice(0, maxListed);
+    return { entries, threshold, median, teamSize: team.length, upkeep };
+  }
+
   return {
     FORBIDDEN,
     RANK_EPS,
@@ -446,5 +488,6 @@
     buildScoreMatrix,
     greedyAssign,
     planSquad,
+    dismissList,
   };
 });

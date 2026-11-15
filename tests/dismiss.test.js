@@ -24,10 +24,11 @@
     const dl = XS.scoring.dismissList(soldiers, settings);
     t.equal(dl.teamSize, 8, "only the 8 hired soldiers count (12 - 4 recruits)");
     t.ok(dl.entries.length >= 0 && dl.entries.length < dl.teamSize, "list is a subset of the team");
+    const bf = settings.dismiss.belowFraction;
     dl.entries.forEach((e) => {
       t.ok(e.soldier.inTeam !== false, "no recruits on the list: " + e.soldier.name);
       t.ok(e.composite < dl.threshold, e.soldier.name + " below threshold");
-      t.ok(e.composite < 0.7 * dl.median + 1e-12, "below 70% of median");
+      t.ok(e.composite < bf * dl.median + 1e-12, "below " + bf + " of median");
       t.equal(e.upkeep, 10000, "vanilla flat upkeep carried through");
       t.ok(typeof e.rankLabel === "string" && e.rankLabel.length > 0);
     });
@@ -69,7 +70,7 @@
 
   test("dismiss: settings defaults + validation/sanitization for the dismiss section", (t) => {
     const d = XS.settings.defaultSettings();
-    t.deepEqual(d.dismiss, { belowFraction: 0.7, soldierUpkeep: 10000, maxListed: 0, hireFraction: 0.9, hireMaxListed: 5, hireCost: 10000 }, "defaults: 70% of median dismiss, $10k/mo salary, hire at/above 90% of median capped at 5, $10k hire cost");
+    t.deepEqual(d.dismiss, { belowFraction: 0.5, soldierUpkeep: 10000, maxListed: 0, hireFraction: 0.9, hireMaxListed: 5, hireCost: 10000 }, "defaults: dismiss below 50% of median, $10k/mo salary, hire at/above 90% of median capped at 5, $10k hire cost");
     t.ok(XS.settings.SECTIONS.indexOf("dismiss") !== -1, "dismiss is a resettable section");
     const bad = { dismiss: { belowFraction: 5, soldierUpkeep: -1, maxListed: -3, hireFraction: 99, hireMaxListed: -1, hireCost: "x" } };
     const errs = XS.settings.validateSettings(bad);

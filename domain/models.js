@@ -26,13 +26,14 @@
    * Single version constant. Bumped once per milestone; shown in the footer
    * and the Help tab so users can tell which build they are running.
    */
-  const APP_VERSION = "0.32.0";
+  const APP_VERSION = "0.33.0";
 
   /*
    * Changelog, newest first. Rendered as a table at the bottom of the Help
    * tab; keep each note to one line. APP_VERSION must match the first entry.
    */
   const VERSION_HISTORY = [
+    { version: "0.33.0", note: "Dismiss threshold default tightened from 70% to 50% of the team median composite, so only clearly unworthy hired soldiers are flagged and there is no dismiss/hire treadmill (on the owner's saves this flags 1 instead of 3, resp. 0 instead of 2). Migration 0.33.0 resets the dismiss section to the new default on upgrade; adjustable live in Settings as always." },
     { version: "0.32.0", note: "New hire-candidates list on the Soldiers tab, the inverse of the dismiss list: recruits whose composite is at/above a fraction of the team median (default 90%, cap 5) are listed best-first with the $10,000 hire cost + $10,000/month salary (vanilla, wiki). Recruits are scored on the same team normalization as the dismiss list, so the two lists are directly comparable. Pure XS.scoring.hireList, deterministic; thresholds in the dismiss settings section (hireFraction/hireMaxListed/hireCost), validated and sanitized." },
     { version: "0.31.0", note: "New dismiss-candidates list on the Soldiers tab: hired (active-team) soldiers whose composite stat score is below a fraction of the team's median composite (default 70%) are listed worst-first with rank, HP, and the flat $10,000/month vanilla salary they cost, since they are not worth the upkeep. Recruits are never listed. Threshold, upkeep and list cap are adjustable in Settings (new 'dismiss' section, resettable, validated on import). Pure logic XS.scoring.dismissList, deterministic." },
     { version: "0.30.0", note: "UI/UX polish: in-game role icons are bigger everywhere (seat chips, quick-add and template counters 20px, pick cards 22px, Roles tab 28px) and align via vertical-align middle; header with the tab bar is now sticky so tabs stay reachable on long pages (incl. vertical 1080x1920); hover states on tabs/buttons/summaries, visible keyboard focus outlines, slightly larger touch targets for the +/- counters and seat remove buttons." },

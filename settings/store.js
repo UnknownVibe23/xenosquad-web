@@ -107,7 +107,7 @@
        * soldierUpkeep is that flat upkeep. maxListed caps the list (0 = all).
        */
       dismiss: {
-        belowFraction: 0.7, // flag in-team soldiers below 70% of the team median composite
+        belowFraction: 0.5, // flag in-team soldiers below 50% of the team median composite (strict: only clearly unworthy soldiers, to avoid a dismiss/hire treadmill; raise toward 0.7 to flag borderline-weak ones too)
         soldierUpkeep: 10000, // $/month per hired soldier (vanilla X1 flat salary, wiki)
         maxListed: 0, // 0 = no cap on the dismiss list
         hireFraction: 0.9, // list recruits at/above this fraction of the team median composite; 90% because recruits are PVT (no +2 promotion bonus yet) while veterans carry it, so ~90% of median is still a good hire (measured on real saves: top recruits land at 90-115%)
@@ -139,6 +139,7 @@
     "0.25.0": ["calibration"], // wound check temporarily off (float thought to be HP)
     "0.27.0": ["calibration"], // current HP located (int before the role string); wound check on again
     "0.29.0": ["templates:append"], // new seeded 6+Hunter draft templates: append the missing ones, keep user edits/deletions of existing templates
+    "0.33.0": ["dismiss"], // dismiss threshold default tightened 0.7 -> 0.5 (only clearly unworthy soldiers flagged)
   };
 
   /* Semver-ish compare: -1 / 0 / 1. Missing or non-numeric parts count as 0. */

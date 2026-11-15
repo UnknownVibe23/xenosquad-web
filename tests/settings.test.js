@@ -263,6 +263,14 @@
     const imp = XS.settings.deserialize(JSON.stringify({ app: "xenosquad-web", version: "0.28.0", settings: { format: XS.settings.defaultSettings().format, templates: old5 } }));
     t.ok(imp.ok);
     t.equal(imp.settings.templates.length, 10, "old export: hunter drafts appended on import");
+    // 0.33.0 migration: a 0.32.0-era blob with the old 0.7 dismiss threshold resets the dismiss section
+    const st3 = fakeStorage();
+    st3.setItem("xenosquad-web.settings", JSON.stringify({
+      app: "xenosquad-web", version: "0.32.0",
+      settings: { dismiss: { belowFraction: 0.7, soldierUpkeep: 10000, maxListed: 0, hireFraction: 0.9, hireMaxListed: 5, hireCost: 10000 } },
+    }));
+    const loaded3 = XS.settings.loadSettings(st3);
+    t.equal(loaded3.dismiss.belowFraction, 0.5, "0.33.0 migration resets dismiss section to the new default");
   });
 
   test("settings: VERSION_HISTORY is newest-first, unique, and starts at APP_VERSION", (t) => {

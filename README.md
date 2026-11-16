@@ -50,12 +50,13 @@ then runs the test suite first and deploys the whole repo to
   Allowed merge methods: *squash* (clean linear history). Approvals: 0 for a solo repo,
   raise to 1 when a teammate joins. Leave signed commits / code scanning off for now.
 - Day-to-day flow (chosen by the repo owner): all work accumulates on ONE integration
-  branch `vibe/work-2aa8b1` → CI runs on every push to it → from time to time the owner
-  merges `vibe/work-2aa8b1` into `main` (a fast-forward when `main` has not moved) and the
+  branch `vibe/work-2aa8b1` → CI runs on every push to it → when a round is ready, a pull
+  request `vibe/work-2aa8b1` → `main` is opened with a summary of changes and test results,
+  and a human reviews and approves it before merging (the AI never pushes to `main`). The
   SAME branch stays for the next round - it is not deleted or recreated. Keep
-  "Automatically delete head branches" OFF in Settings → General, so a merge can never
-  remove the integration branch. (Per-change PR branches are the alternative for bigger
-  teams; this repo uses the single integration branch.)
+  "Automatically delete head branches" OFF in Settings → General, so merging the PR can
+  never remove the integration branch. (Per-change PR branches are the alternative for
+  bigger teams; this repo uses the single integration branch.)
 
 ## Using the app
 

@@ -4,7 +4,10 @@ A squad planner for **Xenonauts 1** (Goldhawk Interactive, 2014) that runs entir
 browser as a static website. Drag a save file onto the page, get the mathematically optimal
 soldier-to-role assignment for a configurable set of squad seats.
 
-## Privacy - the headline feature
+## Privacy by design
+
+The app needs your save file to work, so "nothing ever leaves your machine" is a property
+of the architecture, not an add-on:
 
 - **No backend, no uploads.** The save file is opened with the browser File API and parsed
   locally in memory. There is nowhere for it to be uploaded to.
@@ -28,11 +31,11 @@ The site is plain HTML/CSS/JS with **zero dependencies and zero build step**:
 
 No build step is needed: the deployed site is exactly the files in this repo.
 
-1. Merge `.github/workflows/pages.yml` into `main`.
-2. One-time switch in the repo UI: **Settings → Pages → Build and deployment → Source:
-   _GitHub Actions_** (replaces the legacy "Deploy from a branch" mode).
-3. Every push to `main` runs the test suite first, then deploys the whole repo to
-   `https://<owner>.github.io/xenosquad-web/` (a few minutes). PRs run CI only.
+`.github/workflows/pages.yml` is already on `main`. The only manual step left is a
+one-time switch in the repo UI: **Settings → Pages → Build and deployment → Source:
+_GitHub Actions_** (replaces the legacy "Deploy from a branch" mode). Every push to `main`
+then runs the test suite first and deploys the whole repo to
+`https://<owner>.github.io/xenosquad-web/` (a few minutes). PRs run CI only.
 
 (Legacy alternative: Settings → Pages → Source: Deploy from a branch → `main` → `/ (root)`.)
 
@@ -47,12 +50,12 @@ No build step is needed: the deployed site is exactly the files in this repo.
   Allowed merge methods: *squash* (clean linear history). Approvals: 0 for a solo repo,
   raise to 1 when a teammate joins. Leave signed commits / code scanning off for now.
 - Day-to-day flow (chosen by the repo owner): all work accumulates on ONE integration
-  branch `vibe/work-2aa8b1` → CI runs on every push to it → when satisfied, merge
-  `vibe/work-2aa8b1` into `main` (squash or merge commit) and delete the branch; the
-  next round starts from a fresh `vibe/work-2aa8b1` created from the new `main`.
-  Enable "Automatically delete head branches" in Settings → General as a safety net.
-  (Per-change PR branches are the alternative for bigger teams; this repo uses the
-  single integration branch.)
+  branch `vibe/work-2aa8b1` → CI runs on every push to it → from time to time the owner
+  merges `vibe/work-2aa8b1` into `main` (a fast-forward when `main` has not moved) and the
+  SAME branch stays for the next round - it is not deleted or recreated. Keep
+  "Automatically delete head branches" OFF in Settings → General, so a merge can never
+  remove the integration branch. (Per-change PR branches are the alternative for bigger
+  teams; this repo uses the single integration branch.)
 
 ## Using the app
 
